@@ -27,7 +27,7 @@ flowchart TD
     User -->|"Loop B: Partner edits"| Orch
 ```
 
-## Written Submission, 645 Words
+## Written Submission
 
 ### 1. The agent, the problem, and the intended user
 
