@@ -1,0 +1,5 @@
+vp_org_code,vp_leader_name,annual_proactive_budget_usd,proactive_spent_ytd_usd,proactive_remaining_usd,reactive_counter_spent_ytd_usd,reconciliation_status
+VP_CLOUD_AI,Elena Rostova,12000000,9850000,2150000,6400000,Warning: $1.2M verbal counter-offer miscoded under proactive ledger
+VP_INFRA_SRE,Marcus Vance,9500000,3100000,6400000,2900000,Clean: High remaining proactive capacity for Q4 cliff mitigation
+VP_ENT_APPS,Priya Nair,5200000,4150000,1050000,1800000,Clean: Tracking on target for Q4
+VP_SEC_INTEL,Devon Brooks,4000000,1100000,2900000,3450000,Alert: Reactive counter spend exceeded proactive spend by 3.1x in Q3
