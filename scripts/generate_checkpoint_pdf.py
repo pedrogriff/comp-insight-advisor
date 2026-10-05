@@ -11,8 +11,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Checkpoint 1.1: Problem Framing and Initial Agent Design</title>
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -185,15 +183,16 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       line-height: 1.35;
     }
 
-    .mermaid {
+    .diagram-svg-container {
       display: flex;
       justify-content: center;
       width: 100%;
     }
 
-    .mermaid svg {
-      max-width: 100%;
+    .diagram-svg-container svg {
+      width: 100%;
       height: auto;
+      display: block;
     }
 
     /* Structured content items */
@@ -332,29 +331,159 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
   <h2 class="section-header">System Architecture Diagram</h2>
   <div class="diagram-card">
-    <div class="mermaid">
-flowchart TD
-    User["Strategic Comp Partner User"] -->|"1. Request org brief"| Orch["Insight Advisor Orchestrator Agent"]
-    
-    subgraph Env["Environment: Synthetic Data and Policy Corpus"]
-        DB1[("SQLite / CSV: Synthetic Org Roster & Multi-Year Cashflows")]
-        DB2[("SQLite / CSV: Reactive Offer & Counter-Offer Logs")]
-        RAG[("ChromaDB Vector Store: Comp Playbooks & Handoff Policies")]
-    end
+    <div class="diagram-svg-container">
+      <svg viewBox="0 0 860 390" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        <defs>
+          <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#64748b" />
+          </marker>
+          <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb" />
+          </marker>
+          <marker id="arrow-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#d97706" />
+          </marker>
+          <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626" />
+          </marker>
+          <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a" />
+          </marker>
+          <marker id="arrow-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#7c3aed" />
+          </marker>
+          <filter id="card-shadow" x="-5%" y="-5%" width="110%" height="115%">
+            <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.06" />
+          </filter>
+        </defs>
 
-    Orch -->|"2. Trigger: Query cliffs & peers"| DB1
-    Orch -->|"3. Trigger: Query offers & counters"| DB2
-    Orch -->|"4. Trigger: Retrieve policy"| RAG
+        <!-- ==================== ROW 3 CONTAINER: ENVIRONMENT ==================== -->
+        <rect x="65" y="160" width="730" height="96" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="5 4" />
+        <text x="78" y="175" font-size="9" font-weight="800" fill="#64748b" letter-spacing="0.06em">ENVIRONMENT: SYNTHETIC DATA &amp; POLICY CORPUS</text>
 
-    DB1 -->|"Cliff cohorts & inversions"| Synth["Drafting & Option Evaluation Module"]
-    DB2 -->|"Poaching & decline stats"| Synth
-    RAG -->|"Governance & sizing rules"| Synth
+        <!-- ==================== CONNECTIONS / FLOWS ==================== -->
 
-    Synth -->|"5. Draft brief"| Verifier["Verification & Guardrail Check"]
-    
-    Verifier -->|"Loop A: Math/policy check"| Orch
-    Verifier -->|"6. Verified draft"| User
-    User -->|"Loop B: Partner edits"| Orch
+        <!-- Feedback Loop A: Left-side vertical feedback loop arrow from Row 5 to Row 2 -->
+        <path d="M 275 366 L 30 366 L 30 104 L 265 104" fill="none" stroke="#dc2626" stroke-width="1.75" stroke-dasharray="4 3" marker-end="url(#arrow-red)" />
+        <g transform="translate(145, 93)">
+          <rect x="-105" y="-10" width="210" height="20" rx="4" fill="#fff1f2" stroke="#fecdd3" stroke-width="1" />
+          <text x="0" y="4" font-size="9" font-weight="700" fill="#be123c" text-anchor="middle">Loop A: Math/policy check &rarr; Re-query</text>
+        </g>
+
+        <!-- Return Flow: Right-side vertical return arrow from Row 5 to Row 1 -->
+        <path d="M 585 366 L 830 366 L 830 31 L 565 31" fill="none" stroke="#16a34a" stroke-width="1.75" marker-end="url(#arrow-green)" />
+        <g transform="translate(695, 20)">
+          <rect x="-55" y="-10" width="110" height="20" rx="4" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1" />
+          <text x="0" y="4" font-size="9.5" font-weight="700" fill="#15803d" text-anchor="middle">6. Verified draft</text>
+        </g>
+
+        <!-- Row 1 -> Row 2: 1. Request org brief -->
+        <path d="M 395 48 L 395 86" fill="none" stroke="#2563eb" stroke-width="1.75" marker-end="url(#arrow-blue)" />
+        <g transform="translate(345, 67)">
+          <rect x="-58" y="-9" width="116" height="18" rx="3" fill="#eff6ff" stroke="#bfdbfe" stroke-width="0.8" />
+          <text x="0" y="3.5" font-size="8.5" font-weight="600" fill="#1e40af" text-anchor="middle">1. Request org brief</text>
+        </g>
+
+        <!-- Row 1 -> Row 2: Loop B: Partner edits (curved) -->
+        <path d="M 465 48 C 485 58, 485 76, 465 86" fill="none" stroke="#7c3aed" stroke-width="1.75" stroke-dasharray="4 3" marker-end="url(#arrow-purple)" />
+        <g transform="translate(530, 67)">
+          <rect x="-52" y="-9" width="104" height="18" rx="3" fill="#faf5ff" stroke="#e9d5ff" stroke-width="0.8" />
+          <text x="0" y="3.5" font-size="8.5" font-weight="600" fill="#6b21a8" text-anchor="middle">Loop B: Partner edits</text>
+        </g>
+
+        <!-- Row 2 -> Row 3 Fan-Out Arrows -->
+        <path d="M 330 122 L 205 178" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)" />
+        <g transform="translate(245, 145)">
+          <rect x="-75" y="-8" width="150" height="17" rx="3" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.8" />
+          <text x="0" y="4" font-size="8.5" font-weight="600" fill="#334155" text-anchor="middle">2. Trigger: Query cliffs &amp; peers</text>
+        </g>
+
+        <path d="M 430 122 L 430 178" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)" />
+        <g transform="translate(430, 145)">
+          <rect x="-80" y="-8" width="160" height="17" rx="3" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.8" />
+          <text x="0" y="4" font-size="8.5" font-weight="600" fill="#334155" text-anchor="middle">3. Trigger: Query offers &amp; counters</text>
+        </g>
+
+        <path d="M 530 122 L 655 178" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)" />
+        <g transform="translate(615, 145)">
+          <rect x="-65" y="-8" width="130" height="17" rx="3" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.8" />
+          <text x="0" y="4" font-size="8.5" font-weight="600" fill="#334155" text-anchor="middle">4. Trigger: Retrieve policy</text>
+        </g>
+
+        <!-- Row 3 -> Row 4 Converging Arrows -->
+        <path d="M 205 238 L 350 284" fill="none" stroke="#d97706" stroke-width="1.5" marker-end="url(#arrow-amber)" />
+        <g transform="translate(255, 266)">
+          <rect x="-65" y="-8" width="130" height="17" rx="3" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.8" />
+          <text x="0" y="4" font-size="8.5" font-weight="600" fill="#b45309" text-anchor="middle">Cliff cohorts &amp; inversions</text>
+        </g>
+
+        <path d="M 430 238 L 430 284" fill="none" stroke="#d97706" stroke-width="1.5" marker-end="url(#arrow-amber)" />
+        <g transform="translate(430, 266)">
+          <rect x="-65" y="-8" width="130" height="17" rx="3" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.8" />
+          <text x="0" y="4" font-size="8.5" font-weight="600" fill="#b45309" text-anchor="middle">Poaching &amp; decline stats</text>
+        </g>
+
+        <path d="M 655 238 L 510 284" fill="none" stroke="#d97706" stroke-width="1.5" marker-end="url(#arrow-amber)" />
+        <g transform="translate(605, 266)">
+          <rect x="-68" y="-8" width="136" height="17" rx="3" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.8" />
+          <text x="0" y="4" font-size="8.5" font-weight="600" fill="#b45309" text-anchor="middle">Governance &amp; sizing rules</text>
+        </g>
+
+        <!-- Row 4 -> Row 5: 5. Draft brief -->
+        <path d="M 430 320 L 430 348" fill="none" stroke="#2563eb" stroke-width="1.75" marker-end="url(#arrow-blue)" />
+        <g transform="translate(430, 334)">
+          <rect x="-40" y="-8" width="80" height="16" rx="3" fill="#eff6ff" stroke="#bfdbfe" stroke-width="0.8" />
+          <text x="0" y="4" font-size="8.5" font-weight="700" fill="#1e40af" text-anchor="middle">5. Draft brief</text>
+        </g>
+
+        <!-- ==================== BOXES / NODES ==================== -->
+
+        <!-- ROW 1: Strategic Comp Partner User -->
+        <g filter="url(#card-shadow)">
+          <rect x="305" y="14" width="250" height="34" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.75" />
+          <text x="430" y="35" font-size="12" font-weight="700" fill="#1e3a8a" text-anchor="middle">Strategic Comp Partner User</text>
+        </g>
+
+        <!-- ROW 2: Insight Advisor Orchestrator Agent -->
+        <g filter="url(#card-shadow)">
+          <rect x="265" y="86" width="330" height="36" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.75" />
+          <text x="430" y="108" font-size="12" font-weight="700" fill="#14532d" text-anchor="middle">Insight Advisor Orchestrator Agent</text>
+        </g>
+
+        <!-- ROW 3 NODES: Three Side-by-Side Databases -->
+        <!-- DB 1: SQLite / CSV: Org Roster & Multi-Year Cashflows -->
+        <g filter="url(#card-shadow)">
+          <rect x="80" y="186" width="225" height="52" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+          <text x="192" y="208" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">SQLite / CSV:</text>
+          <text x="192" y="224" font-size="10" font-weight="600" fill="#334155" text-anchor="middle">Org Roster &amp; Multi-Year Cashflows</text>
+        </g>
+
+        <!-- DB 2: SQLite / CSV: Reactive Offer & Counter-Offer Logs -->
+        <g filter="url(#card-shadow)">
+          <rect x="317" y="186" width="225" height="52" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+          <text x="430" y="208" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">SQLite / CSV:</text>
+          <text x="430" y="224" font-size="10" font-weight="600" fill="#334155" text-anchor="middle">Reactive Offer &amp; Counter-Offer Logs</text>
+        </g>
+
+        <!-- DB 3: ChromaDB Vector Store: Comp Playbooks & Policies -->
+        <g filter="url(#card-shadow)">
+          <rect x="555" y="186" width="225" height="52" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+          <text x="667" y="208" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">ChromaDB Vector Store:</text>
+          <text x="667" y="224" font-size="10" font-weight="600" fill="#334155" text-anchor="middle">Comp Playbooks &amp; Policies</text>
+        </g>
+
+        <!-- ROW 4: Drafting & Option Evaluation Module -->
+        <g filter="url(#card-shadow)">
+          <rect x="265" y="284" width="330" height="36" rx="6" fill="#fefce8" stroke="#ca8a04" stroke-width="1.75" />
+          <text x="430" y="306" font-size="12" font-weight="700" fill="#713f12" text-anchor="middle">Drafting &amp; Option Evaluation Module</text>
+        </g>
+
+        <!-- ROW 5: Verification & Guardrail Check -->
+        <g filter="url(#card-shadow)">
+          <rect x="275" y="348" width="310" height="36" rx="6" fill="#fdf2f2" stroke="#dc2626" stroke-width="1.75" />
+          <text x="430" y="370" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">Verification &amp; Guardrail Check</text>
+        </g>
+      </svg>
     </div>
     <div class="diagram-caption">
       <strong>Figure 1:</strong> Closed-loop agent architecture for the Strategic Talent &amp; Compensation Insight Advisor. Illustrates trigger-driven tool execution across structured data (SQLite) and policy retrieval (ChromaDB), evaluated through deterministic verification gates (Feedback Loop A) and steered by human-in-the-loop constraints (Feedback Loop B).
@@ -483,28 +612,6 @@ flowchart TD
     </div>
   </div>
 
-  <script>
-    mermaid.initialize({
-      startOnLoad: true,
-      theme: 'base',
-      themeVariables: {
-        primaryColor: '#eff6ff',
-        primaryBorderColor: '#3b82f6',
-        primaryTextColor: '#1e3a8a',
-        lineColor: '#64748b',
-        secondaryColor: '#f1f5f9',
-        secondaryBorderColor: '#94a3b8',
-        tertiaryColor: '#f8fafc',
-        tertiaryBorderColor: '#cbd5e1',
-        fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
-        fontSize: '15px'
-      },
-      flowchart: {
-        nodeSpacing: 30,
-        rankSpacing: 40
-      }
-    });
-  </script>
 </body>
 </html>
 """
