@@ -4,7 +4,7 @@
 
 ```mermaid
 flowchart TD
-    User["Strategic Comp Partner User"] -->|"1. Requests talent brief for a client VP org"| Orch["Insight Advisor Orchestrator Agent"]
+    User["Strategic Comp Partner User"] -->|"1. Request org brief"| Orch["Insight Advisor Orchestrator Agent"]
     
     subgraph Env["Environment: Synthetic Data and Policy Corpus"]
         DB1[("SQLite / CSV: Synthetic Org Roster & Multi-Year Cashflows")]
@@ -12,19 +12,19 @@ flowchart TD
         RAG[("ChromaDB Vector Store: Comp Playbooks & Handoff Policies")]
     end
 
-    Orch -->|"2. Trigger: Org query initiated -> Query cliff & peer stats"| DB1
-    Orch -->|"3. Trigger: High attrition or cliff rate -> Query offer win/loss & counters"| DB2
-    Orch -->|"4. Trigger: Reactive vs. proactive conflict -> Retrieve policy chunks"| RAG
+    Orch -->|"2. Trigger: Query cliffs & peers"| DB1
+    Orch -->|"3. Trigger: Query offers & counters"| DB2
+    Orch -->|"4. Trigger: Retrieve policy"| RAG
 
-    DB1 -->|"Returns cliff cohorts & inversions"| Synth["Drafting & Option Evaluation Module"]
-    DB2 -->|"Returns poaching & decline spikes"| Synth
-    RAG -->|"Returns governance & eligibility rules"| Synth
+    DB1 -->|"Cliff cohorts & inversions"| Synth["Drafting & Option Evaluation Module"]
+    DB2 -->|"Poaching & decline stats"| Synth
+    RAG -->|"Governance & sizing rules"| Synth
 
-    Synth -->|"5. Generates candidate VP brief & recommendations"| Verifier["Verification & Guardrail Check"]
+    Synth -->|"5. Draft brief"| Verifier["Verification & Guardrail Check"]
     
-    Verifier -->|"Feedback Loop A: Math mismatch or policy violation -> Re-query & revise"| Orch
+    Verifier -->|"Loop A: Math/policy check"| Orch
     Verifier -->|"6. Verified draft"| User
-    User -->|"Feedback Loop B: Partner adjusts budget cap or priorities"| Orch
+    User -->|"Loop B: Partner edits"| Orch
 ```
 
 ## Written Submission, 645 Words
