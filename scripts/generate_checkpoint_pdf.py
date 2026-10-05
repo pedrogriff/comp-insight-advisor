@@ -359,7 +359,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
         <!-- ==================== ROW 3 CONTAINER: ENVIRONMENT ==================== -->
         <rect x="65" y="160" width="730" height="96" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="5 4" />
-        <text x="78" y="175" font-size="9" font-weight="800" fill="#64748b" letter-spacing="0.06em">ENVIRONMENT: SYNTHETIC DATA &amp; POLICY CORPUS</text>
 
         <!-- ==================== CONNECTIONS / FLOWS ==================== -->
 
@@ -434,6 +433,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <g transform="translate(430, 334)">
           <rect x="-40" y="-8" width="80" height="16" rx="3" fill="#eff6ff" stroke="#bfdbfe" stroke-width="0.8" />
           <text x="0" y="4" font-size="8.5" font-weight="700" fill="#1e40af" text-anchor="middle">5. Draft brief</text>
+        </g>
+
+        <!-- Shaded Container Label with Solid White Pill Background (rendered after arrows so the line never crosses text) -->
+        <g transform="translate(80, 163)">
+          <rect x="-6" y="-11" width="280" height="18" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.8" />
+          <text x="0" y="2" font-size="8.5" font-weight="800" fill="#475569" letter-spacing="0.05em">ENVIRONMENT: SYNTHETIC DATA &amp; POLICY CORPUS</text>
         </g>
 
         <!-- ==================== BOXES / NODES ==================== -->
