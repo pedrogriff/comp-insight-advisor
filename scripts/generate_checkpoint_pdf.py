@@ -538,8 +538,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     </div>
     
     <div class="card-item accent-amber">
-      <div class="card-title">Multi-step conditional investigation</div>
-      <div class="card-body">Investigating a talent hotspot requires iterative hypothesis testing. The system must first detect where internal equity cliffs exist, then check whether that same job family is experiencing declining new-hire offer acceptance rates or rising counter-offers, and finally retrieve the specific governance policy that governs whether to intervene through offer bands or proactive retention grants.</div>
+      <div class="card-title">Dynamic, multi-step conditional investigation</div>
+      <div class="card-body">Investigating a talent hotspot requires iterative hypothesis testing rather than a single prompt or a rigid, fixed pipeline. The agent must dynamically choose which dataset or tool to query next based on intermediate results: detecting where internal equity cliffs exist, checking whether that same job family faces declining offer acceptance rates or rising counter-offers, and retrieving the governance policy that determines whether to intervene through offer bands or proactive retention grants.</div>
     </div>
     
     <div class="card-item accent-emerald">
@@ -551,7 +551,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   <div class="avoid-break" style="margin-top: 14px;">
     <h3 class="sub-header">3. The environment: documents, data sources, tools, and users</h3>
     <p>
-      The agent operates within a local Python environment using a Gradio interface and a modular model router supporting OpenRouter cloud models and local Ollama models. It interacts with strictly synthetic data representing a 2,000-person technology organization:
+      The agent operates within a local Python environment using a Gradio interface and a two-tier model router supporting OpenRouter cloud models and local Ollama models. Offloading calculations and retrieval to deterministic tools allows smaller 8B to 12B models to handle structured tool calls reliably, while multi-step action selection and trade-off synthesis route to a stronger reasoning model. It interacts with strictly synthetic data representing a 2,000-person technology organization:
     </p>
     
     <div class="card-item">
@@ -566,7 +566,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
     <div class="card-item">
       <div class="card-title">Tools and users</div>
-      <div class="card-body">Deterministic Python/Pandas query tools for statistical aggregation, a semantic search tool over ChromaDB, a markdown report generator, and the Compensation Partner user who steers the investigation.</div>
+      <div class="card-body">Deterministic Python/Pandas query tools that return compact Markdown table summaries to preserve context window efficiency, a semantic search tool over ChromaDB, a report generator, and the Compensation Partner user who steers the investigation.</div>
     </div>
   </div>
 
@@ -577,7 +577,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
   <div class="avoid-break">
     <h3 class="sub-header">4. The actions the agent needs to take and their triggers</h3>
-    <p>Each action in the investigation is strictly bound to an operational trigger:</p>
+    <p>Rather than executing a fixed pipeline, the agent dynamically selects its next action based on intermediate state and trigger conditions:</p>
 
     <div class="step-item">
       <div class="step-badge">1</div>
@@ -589,14 +589,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <div class="step-item">
       <div class="step-badge">2</div>
       <div class="step-content">
-        <p><strong>Cross-examine reactive market signals.</strong> <span class="trigger-tag">Triggered</span> automatically when Action 1 flags an at-risk job family or location. The agent queries the Offers and Counters Log to measure whether offer acceptance rates have dropped or counter-offer volume has spiked in that same segment.</p>
+        <p><strong>Cross-examine reactive market signals.</strong> <span class="trigger-tag">Triggered</span> dynamically when Action 1 flags an at-risk job family or location. The agent queries the Offers and Counters Log to measure whether offer acceptance rates have dropped or counter-offer volume has spiked in that same segment.</p>
       </div>
     </div>
 
     <div class="step-item">
       <div class="step-badge">3</div>
       <div class="step-content">
-        <p><strong>Retrieve governance and handoff rules.</strong> <span class="trigger-tag">Triggered</span> when both reactive market pressure and internal retention risk appear in the same cohort. The agent queries ChromaDB for policy rules governing whether the issue should be addressed by the Offers team adjusting hiring bands or the Client Partner deploying proactive retention equity.</p>
+        <p><strong>Retrieve governance and handoff rules.</strong> <span class="trigger-tag">Triggered</span> when intermediate results confirm both reactive market pressure and internal retention risk in the same cohort. The agent queries ChromaDB for policy rules governing whether the issue should be addressed by the Offers team adjusting hiring bands or the Client Partner deploying proactive retention equity.</p>
       </div>
     </div>
 
@@ -610,11 +610,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
   <div class="avoid-break" style="margin-top: 14px;">
     <h3 class="sub-header">5. How feedback guides behavior across steps</h3>
-    <p>The system relies on three distinct feedback loops to adapt its behavior dynamically:</p>
+    <p>The system relies on three feedback loops to guide action selection across steps:</p>
 
     <div class="card-item accent-amber">
-      <div class="card-title">Tool execution and schema feedback</div>
-      <div class="card-body">If a SQLite or Pandas query returns an empty cohort, a syntax error, or a sample size too small for statistical relevance, the error signal prompts the agent to broaden its filter criteria, such as expanding from a single sub-team to the broader job family, before proceeding.</div>
+      <div class="card-title">Tool execution and intermediate state feedback</div>
+      <div class="card-body">If a SQLite or Pandas query returns an empty cohort, a syntax error, or a sample size too small for statistical relevance, the feedback signal prompts the agent to broaden its filter criteria, such as expanding from a single sub-team to the broader job family, or skip redundant downstream queries before proceeding.</div>
     </div>
 
     <div class="card-item accent-cmu">

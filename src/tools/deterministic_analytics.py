@@ -33,7 +33,7 @@ def analyze_org_cliff_and_equity_health(
                 ROUND(AVG(compa_ratio), 3) AS avg_compa_ratio,
                 SUM(CASE WHEN yoy_cashflow_change_26_to_27_pct <= -15.0 THEN 1 ELSE 0 END) AS cliff_count_gt_15pct,
                 SUM(CASE WHEN yoy_cashflow_change_26_to_27_pct <= -15.0
-                          AND rating_2025 IN ('4_Outstanding_Impact', '5_Transformative_Impact')
+                          AND rating_2025 IN ('rating_4', 'rating_5')
                     THEN 1 ELSE 0 END) AS high_performer_cliff_count,
                 SUM(CASE WHEN governance_flag LIKE '%Manager Inversion%' THEN 1 ELSE 0 END) AS manager_inversion_count,
                 SUM(CASE WHEN governance_flag LIKE '%Stale pre-promotion%' THEN 1 ELSE 0 END) AS stale_promo_band_count
@@ -199,13 +199,13 @@ def simulate_proactive_retention_scenarios(
     for c in candidates:
         guideline = float(c["equity_refresh_guideline_usd"])
         rating = c["rating_2025"]
-        if rating == "5_Transformative_Impact":
+        if rating == "rating_5":
             tier_counts["Tier_3"] += 1
             tier3_cost += round(guideline * 1.60, -3)
-        elif rating == "4_Outstanding_Impact" or c["critical_ai_talent_tier"] in ("Tier_1", "Tier_2"):
+        elif rating == "rating_4" or c["critical_ai_talent_tier"] in ("Tier_1", "Tier_2"):
             tier_counts["Tier_2"] += 1
             tier2_cost += round(guideline * 1.15, -3)
-        elif rating == "3_Significant_Impact":
+        elif rating == "rating_3":
             tier_counts["Tier_1"] += 1
             tier1_cost += round(guideline * 0.65, -3)
 

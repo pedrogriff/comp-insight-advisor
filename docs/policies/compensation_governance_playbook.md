@@ -6,7 +6,7 @@
 
 Apex Cloud & AI Corp structures total compensation around three principles:
 1. **Cost-of-Labor Market Competitiveness.** Base salary bands and equity refresh targets are calibrated annually against local cost-of-labor benchmarks for each job family and level.
-2. **Pay-for-Performance Differentiation.** Annual equity refresh multipliers and bonus outcomes scale with sustained multi-year performance ratings (`3_Significant_Impact`, `4_Outstanding_Impact`, and `5_Transformative_Impact`).
+2. **Pay-for-Performance Differentiation.** Annual equity refresh multipliers and bonus outcomes scale with sustained multi-year performance ratings (`rating_3`, `rating_4`, and `rating_5`).
 3. **Long-Term Ownership and Cashflow Continuity.** Equity grants vest over four years on a front-loaded schedule (`38% Year 1, 32% Year 2, 20% Year 3, 10% Year 4`). Strategic Compensation Partners monitor three-year forward Intended Cashflow (`ICF`) to prevent unintended compensation cliffs for high-performing talent.
 
 ---
@@ -31,19 +31,19 @@ To maintain internal equity and prevent ad-hoc bidding wars, responsibilities ar
 When evaluating a cohort or individual for a proactive retention award, Strategic Compensation Partners apply the deterministic 4-Tier Sizing Rubric:
 
 - **Tier 0: Hold / No Action.**
-  - *Criteria:* Employee has a `2025` rating of `1_Needs_Improvement` or `2_Moderate_Impact`, OR received a proactive retention grant within the past `24 months`, OR has a projected `2026-to-2027` cashflow drop smaller than `10%` with peer positioning above the `50th percentile`.
+  - *Criteria:* Employee has a `2025` rating of `rating_1` or `rating_2`, OR received a proactive retention grant within the past `24 months`, OR has a projected `2026-to-2027` cashflow drop smaller than `10%` with peer positioning above the `50th percentile`.
   - *Action:* Do not allocate proactive budget. Address retention through standard annual refresh planning.
 
 - **Tier 1: Initial Anchor / Cliff Bridge.**
-  - *Criteria:* Employee is rated `3_Significant_Impact` with a projected `2026-to-2027` cashflow drop between `15%` and `22%`, or peer percentile dropping below the `25th percentile` in `2027`.
+  - *Criteria:* Employee is rated `rating_3` with a projected `2026-to-2027` cashflow drop between `15%` and `22%`, or peer percentile dropping below the `25th percentile` in `2027`.
   - *Sizing Rule:* Grant size equals `50% to 75%` of the annual equity refresh guideline, structured over `24 months` to restore `2027` Intended Cashflow to at least `90%` of `2026` levels.
 
 - **Tier 2: Target Competitive Restoration.**
-  - *Criteria:* Employee is rated `4_Outstanding_Impact` or tagged as `Critical AI Talent (Tier_1 or Tier_2)` in a high-poaching job family (`AI_ML_ENG`, `RESEARCH_SCI`, `CYBER_SEC_ENG`) with a projected `2027` cashflow drop exceeding `15%`.
+  - *Criteria:* Employee is rated `rating_4` or tagged as `Critical AI Talent (Tier_1 or Tier_2)` in a high-poaching job family (`AI_ML_ENG`, `RESEARCH_SCI`, `CYBER_SEC_ENG`) with a projected `2027` cashflow drop exceeding `15%`.
   - *Sizing Rule:* Grant size equals `100% to 135%` of the annual equity refresh guideline, restoring `2027` Intended Cashflow to `100%` of `2026` levels and positioning the employee between the `65th and 80th peer percentile`.
 
 - **Tier 3: Max In-Range Ceiling & Executive Escalation.**
-  - *Criteria:* Employee is rated `5_Transformative_Impact` or holds a mission-critical architecture role facing active competitor raids (`>25%` external market premium observed in Offers Desk logs) and a `>20%` internal cashflow cliff.
+  - *Criteria:* Employee is rated `rating_5` or holds a mission-critical architecture role facing active competitor raids (`>25%` external market premium observed in Offers Desk logs) and a `>20%` internal cashflow cliff.
   - *Sizing Rule:* Grant size up to `150% to 200%` of the annual equity refresh guideline. **Requires explicit Human-in-the-Loop approval** from both the VP and the Head of Compensation.
 
 ---
@@ -51,7 +51,7 @@ When evaluating a cohort or individual for a proactive retention award, Strategi
 ## Section 4. Governance Audits: Manager Inversions and Promotion Band Checks
 
 Before any proactive retention recommendation or executive brief is finalized, the system must audit three governance rules:
-1. **Multi-Year Manager Inversion Audit.** A direct report's projected `2026` or `2027` Intended Cashflow should not exceed their people manager's Intended Cashflow if the manager is at a higher job level (`L7` manager vs. `L6` IC), unless documented as a specialized technical fellow exception. Often, a manager's expiring prior retention grant creates a hidden `2027` inversion that must be flagged alongside IC retention planning.
+1. **Multi-Year Manager Inversion Audit.** A direct report's projected `2026` or `2027` Intended Cashflow should not exceed their people manager's Intended Cashflow if the manager is at a higher job level (`IC4` manager vs. `IC3` IC), unless documented as a specialized technical fellow exception. Often, a manager's expiring prior retention grant creates a hidden `2027` inversion that must be flagged alongside IC retention planning.
 2. **Stale Promotion Band Verification.** Employees promoted within the last `6 months` whose `Compa-Ratio` appears below `0.83` must be audited to verify that their Market Reference Point (`MRP`) and refresh guidelines reflect their new post-promotion level rather than cached pre-promotion tables.
 3. **Ledger Reconciliation Check.** Compare YTD proactive spend against the department's `proactive_remaining_usd` cap. Flag any miscoded verbal counter-offers before recommending new proactive allocations.
 

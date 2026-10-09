@@ -53,19 +53,19 @@ def generate_datasets(output_dir: Path, seed: int = 42) -> None:
     ]
 
     level_base_mrp = {
-        "L4": (145000, 0.15, 45000),
-        "L5": (185000, 0.15, 80000),
-        "L6": (230000, 0.20, 140000),
-        "L7": (285000, 0.25, 250000),
-        "L8": (350000, 0.30, 450000),
+        "IC1": (145000, 0.15, 45000),
+        "IC2": (185000, 0.15, 80000),
+        "IC3": (230000, 0.20, 140000),
+        "IC4": (285000, 0.25, 250000),
+        "IC5": (350000, 0.30, 450000),
     }
 
     ratings = [
-        "1_Needs_Improvement",
-        "2_Moderate_Impact",
-        "3_Significant_Impact",
-        "4_Outstanding_Impact",
-        "5_Transformative_Impact",
+        "rating_1",
+        "rating_2",
+        "rating_3",
+        "rating_4",
+        "rating_5",
     ]
     rating_probs = [0.04, 0.16, 0.55, 0.20, 0.05]
 
@@ -78,7 +78,7 @@ def generate_datasets(output_dir: Path, seed: int = 42) -> None:
         for m_idx in range(40):
             emp_id = f"EMP{emp_id_counter}"
             emp_id_counter += 1
-            lvl = weighted_choice(rng, ["L6", "L7", "L8"], [0.60, 0.30, 0.10])
+            lvl = weighted_choice(rng, ["IC3", "IC4", "IC5"], [0.60, 0.30, 0.10])
             jf = rng.choice(job_families[vp_code])
             reg_code, reg_mult = rng.choice(regions)
             base_mrp, bonus_pct, refresh_target = level_base_mrp[lvl]
@@ -122,7 +122,7 @@ def generate_datasets(output_dir: Path, seed: int = 42) -> None:
                     "critical_ai_talent_tier": (
                         "Tier_1"
                         if jf in ("AI_ML_ENG", "RESEARCH_SCI", "CYBER_SEC_ENG")
-                        and rating_2025 in ("4_Outstanding_Impact", "5_Transformative_Impact")
+                        and rating_2025 in ("rating_4", "rating_5")
                         else "None"
                     ),
                     "base_salary_usd": base_salary_usd,
@@ -145,7 +145,7 @@ def generate_datasets(output_dir: Path, seed: int = 42) -> None:
             emp_id = f"EMP{emp_id_counter}"
             emp_id_counter += 1
             mgr_id, mgr_lvl, mgr_icf26, mgr_icf27 = rng.choice(manager_ids)
-            lvl = weighted_choice(rng, ["L4", "L5", "L6", "L7"], [0.35, 0.38, 0.22, 0.05])
+            lvl = weighted_choice(rng, ["IC1", "IC2", "IC3", "IC4"], [0.35, 0.38, 0.22, 0.05])
             jf = rng.choice(job_families[vp_code])
             reg_code, reg_mult = rng.choice(regions)
             base_mrp, bonus_pct, refresh_target = level_base_mrp[lvl]
@@ -170,7 +170,7 @@ def generate_datasets(output_dir: Path, seed: int = 42) -> None:
                 icf_2027 = round(icf_2026 * drop_factor, -2)
 
             governance_note = "Clean"
-            if vp_code == "VP_INFRA_SRE" and mgr_id in [m[0] for m in manager_ids[:4]] and lvl == "L6":
+            if vp_code == "VP_INFRA_SRE" and mgr_id in [m[0] for m in manager_ids[:4]] and lvl == "IC3":
                 icf_2027 = round(mgr_icf27 * 1.08, -2)
                 governance_note = f"2027 Manager Inversion vs {mgr_id}"
             elif promoted_recent and compa_ratio < 0.83:
@@ -198,7 +198,7 @@ def generate_datasets(output_dir: Path, seed: int = 42) -> None:
                     "critical_ai_talent_tier": (
                         "Tier_1"
                         if is_hotspot_family
-                        and rating_2025 in ("4_Outstanding_Impact", "5_Transformative_Impact")
+                        and rating_2025 in ("rating_4", "rating_5")
                         else ("Tier_2" if is_hotspot_family else "None")
                     ),
                     "base_salary_usd": base_salary_usd,
@@ -229,7 +229,7 @@ def generate_datasets(output_dir: Path, seed: int = 42) -> None:
         event_id = f"OFFER{2026000 + idx}"
         vp_code, _, _ = rng.choice(vp_orgs)
         jf = rng.choice(job_families[vp_code])
-        lvl = weighted_choice(rng, ["L4", "L5", "L6", "L7"], [0.30, 0.40, 0.22, 0.08])
+        lvl = weighted_choice(rng, ["IC1", "IC2", "IC3", "IC4"], [0.30, 0.40, 0.22, 0.08])
         reg_code, _ = rng.choice(regions)
         probs = [0.45, 0.55] if jf in ("AI_ML_ENG", "CYBER_SEC_ENG") else [0.65, 0.35]
         event_type = weighted_choice(rng, ["New_Hire_Offer", "Reactive_Counter_Offer"], probs)

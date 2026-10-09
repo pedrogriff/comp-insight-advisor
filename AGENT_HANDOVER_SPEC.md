@@ -49,6 +49,19 @@ Build the codebase progressively so each module extends the existing files witho
 | **6.1** | Safety Guardrails & HITL | Implement `src/guardrails/verifier.py` (numerical hallucination check, PII/employee-ID redaction for executive summaries, budget cap enforcement) and a Human-in-the-Loop approval gate in the Gradio UI (`src/app.py`) for any Tier 3 exception or cross-team policy conflict. |
 | **7.1** | Final Report & 8-10 Min Video | Run end-to-end evaluation suite (`tests/evaluate_agent.py`) measuring numerical accuracy, policy compliance rate, and latency across models. Package final report PDF and record demo walk-through. |
 
+### 3.1 Queued design backlog for Checkpoints 2.1 and 3.1
+
+When implementing Checkpoint 2.1 (`src/tools/deterministic_analytics.py` and `data/synthetic/generate_synthetic_data.py`) and Checkpoint 3.1 (`docs/policies/compensation_governance_playbook.md`), incorporate these four synthetic workflow patterns:
+
+1. **Two-way cohort audit (`audit_nominated_cohort` + `discover_omitted_sibling_risks`).** Support both top-down VP org scans and bottom-up HR Business Partner nomination list audits. When a partner submits a synthetic nomination list for a product launch or leadership transition, Step 1 filters out disqualified nominees and extracts the touched manager IDs, dynamically triggering Step 2 to scan un-nominated peers and managers in those same reporting chains (`"Why not these?"` swap recommendations).
+2. **2D eligibility matrix (`Cashflow Cliff` x `Peer Percentile Floor`).** Upgrade eligibility detection from a 1D cliff filter (`yoy_cashflow_change_26_to_27_pct <= -15%`) to a 2D trigger that also captures `4_Outstanding_Impact` and `5_Transformative_Impact` employees compressed at `<=15th peer percentile` even when their year-over-year cashflow change is flat.
+3. **Planted human blind-spot archetypes in synthetic data.** Seed `generate_synthetic_data.py` with four testable edge cases:
+   - *Partial-Year New-Hire Trap (False Positive):* Current-year hires (`tenure_years < 1.0`) whose partial first-year cashflow appears at `<=15th percentile` but jumps to `>=90th percentile` in Year 2 once full-year vesting starts.
+   - *Recent Counter/Proactive Cooldown (False Positive):* Nominees who already received a counter-offer or proactive grant within the prior 12 months.
+   - *Forgotten Middle Manager (False Negative):* Nominated ICs who have stable cashflows while their recently promoted people manager (`promoted_last_6m = 1`, `4_Outstanding_Impact`) was omitted from the nomination list and faces a `>20%` raw cliff on a pre-promotion refresh target.
+   - *Cross-Region Manager Inversion Pair:* An `L7` direct report in a higher cost-of-labor region (`US_BAY_AREA`) nominated on the list whose USD cashflow already exceeds their `L8` manager in a lower-multiplier region (`UK_LONDON`), requiring a coupled manager-first review.
+4. **Playbook governance rules for Checkpoint 3.1 RAG.** Add explicit clauses in `compensation_governance_playbook.md` covering the boundary between proactive retention equity and spot launch recognition, the `<1.0 year` partial-year vesting exclusion, the 2D peer-floor rule, and mandatory sibling-tree audits on partner nomination lists.
+
 ---
 
 ## 4. Quick start on the personal machine
