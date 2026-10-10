@@ -384,11 +384,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
           <text x="0" y="3.5" font-size="8.5" font-weight="600" fill="#1e40af" text-anchor="middle">1. Request org brief</text>
         </g>
 
-        <!-- Row 1 -> Row 2: Loop B: Partner edits (curved, centered at y=60) -->
+        <!-- Row 1 -> Row 2: Loop B: Partner edits and approvals (curved, centered at y=60) -->
         <path d="M 465 42 C 485 50, 485 70, 465 78" fill="none" stroke="#7c3aed" stroke-width="1.75" stroke-dasharray="4 3" marker-end="url(#arrow-purple)" />
         <g transform="translate(535, 60)">
-          <rect x="-52" y="-9" width="104" height="18" rx="3" fill="#faf5ff" stroke="#e9d5ff" stroke-width="0.8" />
-          <text x="0" y="3.5" font-size="8.5" font-weight="600" fill="#6b21a8" text-anchor="middle">Loop B: Partner edits</text>
+          <rect x="-66" y="-9" width="132" height="18" rx="3" fill="#faf5ff" stroke="#e9d5ff" stroke-width="0.8" />
+          <text x="0" y="3.5" font-size="8.5" font-weight="600" fill="#6b21a8" text-anchor="middle">Loop B: Edits &amp; approvals</text>
         </g>
 
         <!-- Orthogonal Fan-out from Row 2 to DBs -->
@@ -502,7 +502,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       </svg>
     </div>
     <div class="diagram-caption">
-      <strong>Figure 1:</strong> Closed-loop agent architecture for the Strategic Talent &amp; Compensation Insight Advisor. Illustrates trigger-driven tool execution across structured data (SQLite) and policy retrieval (ChromaDB), evaluated through deterministic verification gates (Feedback Loop A) and steered by human-in-the-loop constraints (Feedback Loop B).
+      <strong>Figure 1:</strong> Closed-loop agent architecture for the Strategic Talent &amp; Compensation Insight Advisor. Illustrates trigger-driven tool execution across structured data (SQLite) and policy retrieval (ChromaDB), evaluated through deterministic verification gates (Feedback Loop A) and steered by partner edits and approvals (Feedback Loop B).
     </div>
   </div>
 
@@ -511,10 +511,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   <div class="avoid-break">
     <h3 class="sub-header">1. The agent, the problem, and the intended user</h3>
     <p>
-      The <strong>Strategic Talent and Compensation Insight Advisor</strong> is a Research Assistant agent built for an enterprise <strong>Strategic Compensation Partner</strong> who advises Engineering Vice Presidents and Lead People Partners. Today, compensation teams often operate in two disconnected silos. A transactional Offers and Counter-Offers team handles external hiring and reactive retention when employees receive competing offers, while Strategic Compensation Partners manage proactive retention budgets, annual equity cycles, and organizational health.
+      The <strong>Strategic Talent and Compensation Insight Advisor</strong> is a Research Assistant agent for a <strong>Strategic Compensation Partner</strong> who advises Engineering Vice Presidents and Lead People Partners. Compensation work sits in two silos. An Offers and Counter-Offers team handles external hiring and reactive retention when employees receive competing offers. Strategic Compensation Partners manage proactive retention budgets, annual equity cycles, and organizational health.
     </p>
     <p>
-      Before a monthly talent review with a VP, the Compensation Partner must manually stitch together spreadsheets of internal employee compensation, multi-year equity vesting schedules, recent offer decline logs, and evolving policy documents. Because this manual synthesis takes hours of spreadsheet work, partners struggle to spot early links between external hiring friction and internal retention risk, and executives receive dense tables rather than clear, actionable insights. The agent solves this by investigating structured workforce data alongside policy documentation to produce a concise, verified executive decision brief.
+      Before a monthly VP talent review, the partner stitches together spreadsheets of employee compensation, vesting schedules, offer decline logs, and policy documents. The work takes hours. Early links between external hiring friction and internal retention risk go unnoticed, and executives get dense tables instead of a recommendation. The agent reads the data and the policies together and produces a short, verified decision brief.
     </p>
   </div>
 
@@ -525,49 +525,51 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
   <div class="avoid-break">
     <h3 class="sub-header">2. Why a standalone LLM or simple prompting is insufficient</h3>
-    <p>A standalone LLM fails at this task for four fundamental architectural reasons:</p>
-    
+    <p>A standalone LLM fails at this task for four reasons:</p>
+
     <div class="card-item accent-cmu">
-      <div class="card-title">Context window degradation and data scale</div>
-      <div class="card-body">Dumping thousands of employee roster rows, multi-year vesting schedules, and dozens of policy documents into a single prompt exceeds smaller model context windows and degrades reasoning accuracy in larger models.</div>
+      <div class="card-title">Data scale</div>
+      <div class="card-body">Thousands of roster rows, vesting schedules, and policy documents overflow a small model's context window and degrade reasoning in larger ones.</div>
     </div>
-    
+
     <div class="card-item">
-      <div class="card-title">Exact arithmetic vs. probabilistic text</div>
-      <div class="card-body">Compensation analysis requires exact aggregations, percentile rankings, year-over-year cashflow drop calculations, and budget caps that LLMs hallucinate without deterministic data tools.</div>
+      <div class="card-title">Exact arithmetic</div>
+      <div class="card-body">Percentile ranks, cashflow drops, and budget caps must be exact. Next-token prediction can return a plausible total that is wrong.</div>
     </div>
-    
+
     <div class="card-item accent-amber">
-      <div class="card-title">Dynamic, multi-step conditional investigation</div>
-      <div class="card-body">Investigating a talent hotspot requires iterative hypothesis testing rather than a single prompt or a rigid, fixed pipeline. The agent must dynamically choose which dataset or tool to query next based on intermediate results: detecting where internal equity cliffs exist, checking whether that same job family faces declining offer acceptance rates or rising counter-offers, and retrieving the governance policy that determines whether to intervene through offer bands or proactive retention grants.</div>
+      <div class="card-title">Dynamic, multi-step investigation</div>
+      <div class="card-body">Finding a talent hotspot means testing hypotheses in order and choosing each next dataset or tool from intermediate results. The agent checks offer trends only for job families with equity cliffs, and retrieves policy only when both signals appear. A single prompt cannot sequence these checks, and a fixed pipeline wastes queries on healthy segments.</div>
     </div>
-    
+
     <div class="card-item accent-emerald">
-      <div class="card-title">Verification before executive delivery</div>
-      <div class="card-body">Outputs shared with VPs require automated validation against source numbers and policy constraints before a human partner reviews them.</div>
+      <div class="card-title">Verification before delivery</div>
+      <div class="card-body">A verifier must check every number in a VP brief against the source data and policy limits.</div>
     </div>
+
   </div>
 
   <div class="avoid-break" style="margin-top: 14px;">
     <h3 class="sub-header">3. The environment: documents, data sources, tools, and users</h3>
     <p>
-      The agent operates within a local Python environment using a Gradio interface and a two-tier model router supporting OpenRouter cloud models and local Ollama models. Offloading calculations and retrieval to deterministic tools allows smaller 8B to 12B models to handle structured tool calls reliably, while multi-step action selection and trade-off synthesis route to a stronger reasoning model. It interacts with strictly synthetic data representing a 2,000-person technology organization:
+      The agent runs locally in Python behind a Gradio interface. A two-tier model router sends routine tool calls to an 8B to 12B model and sends action selection and trade-off synthesis to a stronger reasoning model. Small models call tools reliably once the tools do the math and retrieval. All data is synthetic and describes a 2,000-person technology company:
     </p>
-    
+
     <div class="card-item">
-      <div class="card-title">Structured data sources</div>
-      <div class="card-body">Three relational tables stored in SQLite and CSV format: an <em>Org Roster &amp; Cashflow Table</em> containing synthetic salaries, peer percentiles, performance ratings, and four-year vesting schedules; a <em>Reactive Offers &amp; Counters Log</em> tracking candidate offer acceptances, declines, competing employers, and counter-offer outcomes; and a <em>Department Budget Ledger</em>.</div>
+      <div class="card-title">Structured data</div>
+      <div class="card-body">Three SQLite tables: an <em>Org Roster &amp; Cashflow Table</em> with salaries, peer percentiles, ratings, and vesting schedules; a <em>Reactive Offers &amp; Counters Log</em> with offer outcomes, competing employers, and counter-offers; and a <em>Department Budget Ledger</em>.</div>
     </div>
 
     <div class="card-item">
-      <div class="card-title">Unstructured knowledge base</div>
-      <div class="card-body">A ChromaDB vector store indexing synthetic compensation policy PDFs, guidelines defining the boundary between reactive counter-offers and proactive retention, and historical executive briefing templates.</div>
+      <div class="card-title">Policy documents</div>
+      <div class="card-body">A ChromaDB vector store of compensation policies, including the rules that separate reactive counter-offers from proactive retention.</div>
     </div>
 
     <div class="card-item">
       <div class="card-title">Tools and users</div>
-      <div class="card-body">Deterministic Python/Pandas query tools that return compact Markdown table summaries to preserve context window efficiency, a semantic search tool over ChromaDB, a report generator, and the Compensation Partner user who steers the investigation.</div>
+      <div class="card-body">Read-only Python/Pandas query tools that return compact Markdown table summaries instead of raw rows, a semantic search tool over ChromaDB, a report generator, and the Compensation Partner.</div>
     </div>
+
   </div>
 
   <!-- ==================== PAGE 3 ==================== -->
@@ -577,55 +579,64 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
   <div class="avoid-break">
     <h3 class="sub-header">4. The actions the agent needs to take and their triggers</h3>
-    <p>Rather than executing a fixed pipeline, the agent dynamically selects its next action based on intermediate state and trigger conditions:</p>
+    <p>The current state decides which action runs next:</p>
 
     <div class="step-item">
       <div class="step-badge">1</div>
       <div class="step-content">
-        <p><strong>Scan and aggregate org health metrics.</strong> <span class="trigger-tag">Triggered</span> when the user selects a VP organization and requests a talent review. The agent calls the roster analysis tool to identify cohorts with projected year-over-year cashflow drops exceeding 15 percent or peer positioning below the 25th percentile.</p>
+        <p><strong>Scan org health.</strong> <span class="trigger-tag">Triggered</span> when the user requests a talent review for a VP organization. The roster tool flags cohorts with a projected cashflow drop above 15 percent or peer positioning below the 25th percentile.</p>
       </div>
     </div>
 
     <div class="step-item">
       <div class="step-badge">2</div>
       <div class="step-content">
-        <p><strong>Cross-examine reactive market signals.</strong> <span class="trigger-tag">Triggered</span> dynamically when Action 1 flags an at-risk job family or location. The agent queries the Offers and Counters Log to measure whether offer acceptance rates have dropped or counter-offer volume has spiked in that same segment.</p>
+        <p><strong>Cross-examine market signals.</strong> <span class="trigger-tag">Triggered</span> when Action 1 flags an at-risk job family or location. The agent checks the Offers and Counters Log for falling offer acceptance or rising counter-offers in that segment.</p>
       </div>
     </div>
 
     <div class="step-item">
       <div class="step-badge">3</div>
       <div class="step-content">
-        <p><strong>Retrieve governance and handoff rules.</strong> <span class="trigger-tag">Triggered</span> when intermediate results confirm both reactive market pressure and internal retention risk in the same cohort. The agent queries ChromaDB for policy rules governing whether the issue should be addressed by the Offers team adjusting hiring bands or the Client Partner deploying proactive retention equity.</p>
+        <p><strong>Retrieve governance rules.</strong> <span class="trigger-tag">Triggered</span> when both signals hit the same cohort. The agent searches ChromaDB for the policy that decides whether the Offers team adjusts hiring bands or the partner grants retention equity.</p>
       </div>
     </div>
 
     <div class="step-item">
       <div class="step-badge">4</div>
       <div class="step-content">
-        <p><strong>Draft the executive insight brief.</strong> <span class="trigger-tag">Triggered</span> once data aggregation and policy retrieval complete. The agent synthesizes a one-page brief summarizing the risk, comparing intervention options against available budget, and citing exact source metrics.</p>
+        <p><strong>Draft the brief.</strong> <span class="trigger-tag">Triggered</span> once aggregation and retrieval finish. The agent writes a one-page brief that states the risk, compares options against the remaining budget, and cites source metrics.</p>
       </div>
     </div>
+
+    <div class="step-item">
+      <div class="step-badge">5</div>
+      <div class="step-content">
+        <p><strong>Ask for approval.</strong> <span class="trigger-tag">Triggered</span> when an option needs a policy exception, such as a top-tier retention grant. The agent waits for the partner to accept or decline it.</p>
+      </div>
+    </div>
+
   </div>
 
   <div class="avoid-break" style="margin-top: 14px;">
     <h3 class="sub-header">5. How feedback guides behavior across steps</h3>
-    <p>The system relies on three feedback loops to guide action selection across steps:</p>
+    <p>Three feedback loops shape the next step:</p>
 
     <div class="card-item accent-amber">
-      <div class="card-title">Tool execution and intermediate state feedback</div>
-      <div class="card-body">If a SQLite or Pandas query returns an empty cohort, a syntax error, or a sample size too small for statistical relevance, the feedback signal prompts the agent to broaden its filter criteria, such as expanding from a single sub-team to the broader job family, or skip redundant downstream queries before proceeding.</div>
+      <div class="card-title">Tool results</div>
+      <div class="card-body">An empty cohort, a query error, or a sample too small to trust makes the agent widen its filter, say from one sub-team to the whole job family, or skip queries that no longer apply.</div>
     </div>
 
     <div class="card-item accent-cmu">
-      <div class="card-title">Self-verification and policy audit loop</div>
-      <div class="card-body">Before displaying the brief, a verification step compares every dollar figure and headcount number in the drafted text against the raw tool outputs and checks that proposed retention spend does not exceed the remaining budget in the ledger. Any discrepancy triggers a targeted regeneration of the flawed section.</div>
+      <div class="card-title">Verification</div>
+      <div class="card-body">Before the partner sees the brief, the verifier checks every dollar figure and headcount against the tool outputs and confirms that proposed spend fits the remaining budget. A mismatch regenerates only the flawed section.</div>
     </div>
 
     <div class="card-item accent-emerald">
-      <div class="card-title">Human-in-the-loop partner refinement</div>
-      <div class="card-body">When the Compensation Partner reviews the brief in the UI and adjusts a constraint, such as lowering the budget cap or excluding employees promoted within the last six months, the agent captures that feedback, updates its session memory, re-runs the affected tool calculations, and revises the trade-off recommendations.</div>
+      <div class="card-title">Partner review</div>
+      <div class="card-body">When the partner changes a constraint, such as a lower budget cap or excluding recent promotions, the agent stores it in session memory, re-runs the affected calculations, and revises the recommendations. A declined exception drops that option from the brief.</div>
     </div>
+
   </div>
 
 </body>

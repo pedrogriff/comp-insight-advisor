@@ -24,43 +24,44 @@ flowchart TD
     
     Verifier -->|"Loop A: State, math & policy check"| Orch
     Verifier -->|"6. Verified draft"| User
-    User -->|"Loop B: Partner edits"| Orch
+    User -->|"Loop B: Partner edits & approvals"| Orch
 ```
 
 ## Written Submission
 
 ### 1. The agent, the problem, and the intended user
 
-The **Strategic Talent and Compensation Insight Advisor** is a Research Assistant agent built for an enterprise **Strategic Compensation Partner** who advises Engineering Vice Presidents and Lead People Partners. Today, compensation teams often operate in two disconnected silos. A transactional Offers and Counter-Offers team handles external hiring and reactive retention when employees receive competing offers, while Strategic Compensation Partners manage proactive retention budgets, annual equity cycles, and organizational health. 
+The **Strategic Talent and Compensation Insight Advisor** is a Research Assistant agent for a **Strategic Compensation Partner** who advises Engineering Vice Presidents and Lead People Partners. Compensation work sits in two silos. An Offers and Counter-Offers team handles external hiring and reactive retention when employees receive competing offers. Strategic Compensation Partners manage proactive retention budgets, annual equity cycles, and organizational health.
 
-Before a monthly talent review with a VP, the Compensation Partner must manually stitch together spreadsheets of internal employee compensation, multi-year equity vesting schedules, recent offer decline logs, and evolving policy documents. Because this manual synthesis takes hours of spreadsheet work, partners struggle to spot early links between external hiring friction and internal retention risk, and executives receive dense tables rather than clear, actionable insights. The agent solves this by investigating structured workforce data alongside policy documentation to produce a concise, verified executive decision brief.
+Before a monthly VP talent review, the partner stitches together spreadsheets of employee compensation, vesting schedules, offer decline logs, and policy documents. The work takes hours. Early links between external hiring friction and internal retention risk go unnoticed, and executives get dense tables instead of a recommendation. The agent reads the data and the policies together and produces a short, verified decision brief.
 
 ### 2. Why a standalone LLM or simple prompting is insufficient
 
 A standalone LLM fails at this task for four reasons:
-- **Context window degradation and data scale.** Dumping thousands of employee roster rows, multi-year vesting schedules, and dozens of policy documents into a single prompt exceeds smaller model context windows and degrades reasoning accuracy in larger models.
-- **Exact arithmetic vs. probabilistic text.** Compensation analysis requires exact aggregations, percentile rankings, year-over-year cashflow drop calculations, and budget caps that LLMs hallucinate without deterministic data tools.
-- **Dynamic, multi-step conditional investigation.** Investigating a talent hotspot requires iterative hypothesis testing rather than a single prompt or a rigid, fixed pipeline. The agent must dynamically choose which dataset or tool to query next based on intermediate results: detecting where internal equity cliffs exist, checking whether that same job family faces declining offer acceptance rates or rising counter-offers, and retrieving the governance policy that determines whether to intervene through offer bands or proactive retention grants.
-- **Verification before executive delivery.** Outputs shared with VPs require automated validation against source numbers and policy constraints before a human partner reviews them.
+- **Data scale.** Thousands of roster rows, vesting schedules, and policy documents overflow a small model's context window and degrade reasoning in larger ones.
+- **Exact arithmetic.** Percentile ranks, cashflow drops, and budget caps must be exact. Next-token prediction can return a plausible total that is wrong.
+- **Dynamic, multi-step investigation.** Finding a talent hotspot means testing hypotheses in order and choosing each next dataset or tool from intermediate results. The agent checks offer trends only for job families with equity cliffs, and retrieves policy only when both signals appear. A single prompt cannot sequence these checks, and a fixed pipeline wastes queries on healthy segments.
+- **Verification before delivery.** A verifier must check every number in a VP brief against the source data and policy limits.
 
 ### 3. The environment: documents, data sources, tools, and users
 
-The agent operates within a local Python environment using a Gradio interface and a two-tier model router supporting OpenRouter cloud models and local Ollama models. Offloading calculations and retrieval to deterministic tools allows smaller 8B to 12B models to handle structured tool calls reliably, while multi-step action selection and trade-off synthesis route to a stronger reasoning model. It interacts with strictly synthetic data representing a 2,000-person technology organization:
-- **Structured data sources.** Three relational tables stored in SQLite and CSV format: an *Org Roster & Cashflow Table* containing synthetic salaries, peer percentiles, performance ratings, and four-year vesting schedules; a *Reactive Offers & Counters Log* tracking candidate offer acceptances, declines, competing employers, and counter-offer outcomes; and a *Department Budget Ledger*.
-- **Unstructured knowledge base.** A ChromaDB vector store indexing synthetic compensation policy PDFs, guidelines defining the boundary between reactive counter-offers and proactive retention, and historical executive briefing templates.
-- **Tools and users.** Deterministic Python/Pandas query tools that return compact Markdown table summaries to preserve context window efficiency, a semantic search tool over ChromaDB, a report generator, and the Compensation Partner user who steers the investigation.
+The agent runs locally in Python behind a Gradio interface. A two-tier model router sends routine tool calls to an 8B to 12B model and sends action selection and trade-off synthesis to a stronger reasoning model. Small models call tools reliably once the tools do the math and retrieval. All data is synthetic and describes a 2,000-person technology company:
+- **Structured data.** Three SQLite tables: an *Org Roster & Cashflow Table* with salaries, peer percentiles, ratings, and vesting schedules; a *Reactive Offers & Counters Log* with offer outcomes, competing employers, and counter-offers; and a *Department Budget Ledger*.
+- **Policy documents.** A ChromaDB vector store of compensation policies, including the rules that separate reactive counter-offers from proactive retention.
+- **Tools and users.** Read-only Python/Pandas query tools that return compact Markdown table summaries instead of raw rows, a semantic search tool over ChromaDB, a report generator, and the Compensation Partner.
 
 ### 4. The actions the agent needs to take and their triggers
 
-Rather than executing a fixed pipeline, the agent dynamically selects its next action based on intermediate state and trigger conditions:
-1. **Scan and aggregate org health metrics.** *Triggered when the user selects a VP organization and requests a talent review.* The agent calls the roster analysis tool to identify cohorts with projected year-over-year cashflow drops exceeding 15 percent or peer positioning below the 25th percentile.
-2. **Cross-examine reactive market signals.** *Triggered dynamically when Action 1 flags an at-risk job family or location.* The agent queries the Offers and Counters Log to measure whether offer acceptance rates have dropped or counter-offer volume has spiked in that same segment.
-3. **Retrieve governance and handoff rules.** *Triggered when intermediate results confirm both reactive market pressure and internal retention risk in the same cohort.* The agent queries ChromaDB for policy rules governing whether the issue should be addressed by the Offers team adjusting hiring bands or the Client Partner deploying proactive retention equity.
-4. **Draft the executive insight brief.** *Triggered once data aggregation and policy retrieval complete.* The agent synthesizes a one-page brief summarizing the risk, comparing intervention options against available budget, and citing exact source metrics.
+The current state decides which action runs next:
+1. **Scan org health.** *Triggered when the user requests a talent review for a VP organization.* The roster tool flags cohorts with a projected cashflow drop above 15 percent or peer positioning below the 25th percentile.
+2. **Cross-examine market signals.** *Triggered when Action 1 flags an at-risk job family or location.* The agent checks the Offers and Counters Log for falling offer acceptance or rising counter-offers in that segment.
+3. **Retrieve governance rules.** *Triggered when both signals hit the same cohort.* The agent searches ChromaDB for the policy that decides whether the Offers team adjusts hiring bands or the partner grants retention equity.
+4. **Draft the brief.** *Triggered once aggregation and retrieval finish.* The agent writes a one-page brief that states the risk, compares options against the remaining budget, and cites source metrics.
+5. **Ask for approval.** *Triggered when an option needs a policy exception, such as a top-tier retention grant.* The agent waits for the partner to accept or decline it.
 
 ### 5. How feedback guides behavior across steps
 
-The system relies on three feedback loops to guide action selection across steps:
-- **Tool execution and intermediate state feedback.** If a SQLite or Pandas query returns an empty cohort, a syntax error, or a sample size too small for statistical relevance, the feedback signal prompts the agent to broaden its filter criteria, such as expanding from a single sub-team to the broader job family, or skip redundant downstream queries before proceeding.
-- **Self-verification and policy audit loop.** Before displaying the brief, a verification step compares every dollar figure and headcount number in the drafted text against the raw tool outputs and checks that proposed retention spend does not exceed the remaining budget in the ledger. Any discrepancy triggers a targeted regeneration of the flawed section.
-- **Human-in-the-loop partner refinement.** When the Compensation Partner reviews the brief in the UI and adjusts a constraint, such as lowering the budget cap or excluding employees promoted within the last six months, the agent captures that feedback, updates its session memory, re-runs the affected tool calculations, and revises the trade-off recommendations.
+Three feedback loops shape the next step:
+- **Tool results.** An empty cohort, a query error, or a sample too small to trust makes the agent widen its filter, say from one sub-team to the whole job family, or skip queries that no longer apply.
+- **Verification.** Before the partner sees the brief, the verifier checks every dollar figure and headcount against the tool outputs and confirms that proposed spend fits the remaining budget. A mismatch regenerates only the flawed section.
+- **Partner review.** When the partner changes a constraint, such as a lower budget cap or excluding recent promotions, the agent stores it in session memory, re-runs the affected calculations, and revises the recommendations. A declined exception drops that option from the brief.
