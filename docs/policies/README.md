@@ -1,3 +1,3 @@
 # Synthetic Policy Corpus
 
-Stores synthetic compensation policy documents, reactive-vs-proactive handoff playbooks, and executive briefing templates indexed by ChromaDB.
+Stores the synthetic compensation policy that the agent will retrieve from in checkpoint 3.1. Retrieval is not built yet.
