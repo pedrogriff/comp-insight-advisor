@@ -44,12 +44,12 @@ def generate_datasets(output_dir: Path, seed: int = 42) -> None:
     }
 
     regions = [
-        ("US_BAY_AREA", 1.15),
-        ("US_SEATTLE_NYC", 1.10),
-        ("US_AUSTIN_DENVER", 0.95),
-        ("UK_LONDON", 0.85),
-        ("EU_ZURICH_MUNICH", 0.92),
-        ("APAC_SINGAPORE_TOKYO", 0.80),
+        ("US_ZONE_A", 1.15),
+        ("US_ZONE_B", 1.10),
+        ("US_ZONE_C", 0.95),
+        ("UK_ZONE_A", 0.85),
+        ("EU_ZONE_A", 0.92),
+        ("APAC_ZONE_A", 0.80),
     ]
 
     level_base_mrp = {
