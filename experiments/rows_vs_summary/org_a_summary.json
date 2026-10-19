@@ -1,0 +1,91 @@
+{
+  "vp_org_code": "Org A",
+  "org_summary": {
+    "total_headcount": 500,
+    "avg_compa_ratio": 0.913,
+    "cliff_count_gt_15pct": 87,
+    "high_performer_cliff_count": 24,
+    "manager_inversion_count": 0,
+    "stale_promo_band_count": 4
+  },
+  "job_family_breakdown": [
+    {
+      "job_family": "AI_ML_ENG",
+      "headcount": 121,
+      "avg_compa_ratio": 0.922,
+      "avg_yoy_cashflow_change_pct": -11.4,
+      "cliff_headcount": 52,
+      "avg_2027_peer_percentile": 39.2
+    },
+    {
+      "job_family": "RESEARCH_SCI",
+      "headcount": 116,
+      "avg_compa_ratio": 0.909,
+      "avg_yoy_cashflow_change_pct": -7.6,
+      "cliff_headcount": 35,
+      "avg_2027_peer_percentile": 41.8
+    },
+    {
+      "job_family": "SW_ENG",
+      "headcount": 141,
+      "avg_compa_ratio": 0.907,
+      "avg_yoy_cashflow_change_pct": -2.6,
+      "cliff_headcount": 0,
+      "avg_2027_peer_percentile": 47.0
+    },
+    {
+      "job_family": "PROD_MGMT",
+      "headcount": 122,
+      "avg_compa_ratio": 0.916,
+      "avg_yoy_cashflow_change_pct": -2.5,
+      "cliff_headcount": 0,
+      "avg_2027_peer_percentile": 49.5
+    }
+  ],
+  "governance_alerts": [
+    {
+      "employee_id": "EMP10254",
+      "job_family": "PROD_MGMT",
+      "job_level": "IC2",
+      "manager_id": "EMP10018",
+      "intended_cashflow_2026_usd": 281700.0,
+      "intended_cashflow_2027_usd": 266200.0,
+      "governance_flag": "Stale pre-promotion band mapping suspected"
+    },
+    {
+      "employee_id": "EMP10304",
+      "job_family": "SW_ENG",
+      "job_level": "IC1",
+      "manager_id": "EMP10010",
+      "intended_cashflow_2026_usd": 210200.0,
+      "intended_cashflow_2027_usd": 206000.0,
+      "governance_flag": "Stale pre-promotion band mapping suspected"
+    },
+    {
+      "employee_id": "EMP10422",
+      "job_family": "AI_ML_ENG",
+      "job_level": "IC2",
+      "manager_id": "EMP10016",
+      "intended_cashflow_2026_usd": 222200.0,
+      "intended_cashflow_2027_usd": 215700.0,
+      "governance_flag": "Stale pre-promotion band mapping suspected"
+    },
+    {
+      "employee_id": "EMP10463",
+      "job_family": "SW_ENG",
+      "job_level": "IC1",
+      "manager_id": "EMP10020",
+      "intended_cashflow_2026_usd": 185600.0,
+      "intended_cashflow_2027_usd": 179900.0,
+      "governance_flag": "Stale pre-promotion band mapping suspected"
+    }
+  ],
+  "budget_status": {
+    "vp_org_code": "Org A",
+    "annual_proactive_budget_usd": 12000000,
+    "proactive_spent_ytd_usd": 9850000,
+    "proactive_remaining_usd": 2150000,
+    "reactive_counter_spent_ytd_usd": 6400000,
+    "reconciliation_status": "Warning: $1.2M verbal counter-offer miscoded under proactive ledger"
+  }
+}
