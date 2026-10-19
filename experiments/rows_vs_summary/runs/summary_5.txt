@@ -1,0 +1,2 @@
+87, 24
+How I got them: I extracted these exact metrics directly from the org_summary object under "cliff_count_gt_15pct" (87) and "high_performer_cliff_count" (24).

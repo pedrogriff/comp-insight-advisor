@@ -1,0 +1,2 @@
+87 employees face a drop of 15% or more in intended cash flow, and 24 of those are high performers.
+Method: These totals are pulled directly from the cliff_count_gt_15pct (87) and high_performer_cliff_count (24) fields under org_summary in the JSON.

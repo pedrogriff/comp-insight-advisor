@@ -1,0 +1,2 @@
+87, 24
+How I got them: Pulled directly from the org_summary fields cliff_count_gt_15pct (87 total employees facing a drop >15%) and high_performer_cliff_count (24 high performers among them).

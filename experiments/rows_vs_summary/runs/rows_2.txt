@@ -1,0 +1,2 @@
+111 employees face a drop of 15% or more in intended cash flow, and 23 of those are high performers (rating_4 or rating_5).
+Methodology: Counted employees where yoy_cashflow_change_26_to_27_pct is less than or equal to -15.0, and among that subset, filtered for those with a rating_2025 of rating_4 or rating_5.

@@ -1,0 +1,2 @@
+87 and 24.
+I got these numbers directly from the org_summary fields cliff_count_gt_15pct (87) and high_performer_cliff_count (24).
