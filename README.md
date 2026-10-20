@@ -57,7 +57,7 @@ The generator is deterministic. A rerun writes the same three CSV files byte for
 | # | Date | Post | Topic |
 | :--- | :--- | :--- | :--- |
 | 1 | Oct 13 | [Build log 1/7](https://www.linkedin.com/feed/update/urn:li:activity:7515786546697117696/) | An agent that isn't allowed to do math |
-| 2 | Oct 20 | | 500 rows vs. 5 numbers |
+| 2 | Oct 20 | [Build log 2/7](https://www.linkedin.com/feed/update/urn:li:activity:7518326192945430531/) | 500 rows vs. 5 numbers |
 | 3 | Oct 27 | | Retrieval found the old policy |
 | 4 | Nov 3 | | Two of my three plans were the same plan |
 | 5 | Nov 10 | | One agent vs. three, measured |
