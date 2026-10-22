@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350">
+<rect width="1080" height="1350" fill="#0B1220"/>
+<text x="90" y="130" font-family="Roboto, sans-serif" font-size="64" font-weight="700" fill="#F9FAFB">Exact compa-ratios out of 300</text>
+<text x="90" y="190" font-family="Roboto, sans-serif" font-size="32" fill="#9CA3AF">Synthetic data. Median run for each setup.</text>
+<rect x="90" y="298" width="900" height="4" fill="#1F2937"/>
+<rect x="90" y="1050" width="900" height="4" fill="#60A5FA"/>
+<rect x="380" y="308" width="150" height="742" fill="#F87171"/>
+<text x="455" y="288" text-anchor="middle" font-family="Roboto, sans-serif" font-size="44" font-weight="700" fill="#F9FAFB">297</text>
+<rect x="550" y="300" width="150" height="750" fill="#34D399"/>
+<text x="625" y="280" text-anchor="middle" font-family="Roboto, sans-serif" font-size="44" font-weight="700" fill="#F9FAFB">300</text>
+<text x="540" y="1110" text-anchor="middle" font-family="Roboto, sans-serif" font-size="30" fill="#E5E7EB">gemini-3.5-flash-lite</text>
+<rect x="90" y="1160" width="36" height="36" fill="#F87171"/>
+<text x="142" y="1190" font-family="Roboto, sans-serif" font-size="32" fill="#E5E7EB">Text-only math</text>
+<rect x="510" y="1160" width="36" height="36" fill="#34D399"/>
+<text x="562" y="1190" font-family="Roboto, sans-serif" font-size="32" fill="#E5E7EB">Divide tool</text>
+<text x="90" y="1300" font-family="Roboto, sans-serif" font-size="28" fill="#9CA3AF">Models write the words. Code computes the money. People decide.</text>
+</svg>

@@ -231,10 +231,14 @@ class ChatClient:
             raw = self._post("chat/completions", body)
             message = raw["choices"][0]["message"]
             usage = raw.get("usage") or {}
-            calls = [{"id": c.get("id") or f"call_{n}", "name": c["function"]["name"],
-                      "arguments": _arguments(c["function"].get("arguments"))}
-                     for n, c in enumerate(message.get("tool_calls") or [])]
+            calls = []
+            for n, c in enumerate(message.get("tool_calls") or []):
+                call_id = c.get("id") or f"call_{n}"
+                c["id"] = call_id
+                calls.append({"id": call_id, "name": c["function"]["name"],
+                              "arguments": _arguments(c["function"].get("arguments"))})
             return {"content": message.get("content") or "", "tool_calls": calls, "raw": raw,
+                    "message": message,
                     "prompt_tokens": usage.get("prompt_tokens") or 0,
                     "completion_tokens": usage.get("completion_tokens") or 0}
         body = {"model": self.model, "messages": _ollama_messages(messages), "stream": False,
@@ -243,16 +247,21 @@ class ChatClient:
             body["tools"] = tools
         raw = self._post("api/chat", body)
         message = raw.get("message") or {}
-        calls = [{"id": f"call_{n}", "name": c["function"]["name"],
-                  "arguments": _arguments(c["function"].get("arguments"))}
-                 for n, c in enumerate(message.get("tool_calls") or [])]
+        calls = []
+        for n, c in enumerate(message.get("tool_calls") or []):
+            call_id = c.get("id") or f"call_{n}"
+            c["id"] = call_id
+            calls.append({"id": call_id, "name": c["function"]["name"],
+                          "arguments": _arguments(c["function"].get("arguments"))})
         return {"content": message.get("content") or "", "tool_calls": calls, "raw": raw,
+                "message": message,
                 "prompt_tokens": raw.get("prompt_eval_count") or 0,
                 "completion_tokens": raw.get("eval_count") or 0}
 
 
 def call_tool(call):
-    if call["name"] != "divide":
+    name = call["name"].split(":")[-1]
+    if name != "divide":
         return "error: unknown tool " + call["name"]
     try:
         return f"{divide(call['arguments']['a'], call['arguments']['b']):.3f}"
@@ -279,10 +288,16 @@ def run_conversation(client, rows, setup, max_turns=60):
         if not (tools and reply["tool_calls"]):
             out["answer"] = reply["content"]
             break
-        messages.append({"role": "assistant", "content": reply["content"] or None, "tool_calls": [
-            {"id": c["id"], "type": "function",
-             "function": {"name": c["name"], "arguments": json.dumps(c["arguments"])}}
-            for c in reply["tool_calls"]]})
+        assistant_msg = reply.get("message")
+        if not assistant_msg:
+            assistant_msg = {"role": "assistant", "content": reply["content"] or None, "tool_calls": [
+                {"id": c["id"], "type": "function",
+                 "function": {"name": c["name"], "arguments": json.dumps(c["arguments"])}}
+                for c in reply["tool_calls"]]}
+        else:
+            assistant_msg = dict(assistant_msg)
+            assistant_msg.setdefault("role", "assistant")
+        messages.append(assistant_msg)
         for c in reply["tool_calls"]:
             messages.append({"role": "tool", "tool_call_id": c["id"], "content": call_tool(c)})
             out["tool_calls"] += 1

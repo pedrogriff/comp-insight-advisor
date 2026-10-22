@@ -1,0 +1,9 @@
+provider,model,setup,run,batch_size,returned,exact,off_by_more_than_0005,worst_miss,dropped,duplicated,unknown_ids,bracket_flips,tool_calls,turns,hit_turn_cap,prompt_tokens,completion_tokens,seconds,cost_usd
+gemini,gemini-3.5-flash-lite,text,1,300,300,297,0,0.001,0,0,0,0,0,1,False,5784,3306,6.9,
+gemini,gemini-3.5-flash-lite,text,2,300,300,298,1,0.016,0,0,0,0,0,1,False,5784,3306,6.6,
+gemini,gemini-3.5-flash-lite,text,3,300,300,296,0,0.001,0,0,0,0,0,1,False,5784,3306,6.6,
+gemini,gemini-3.5-flash-lite,text,4,300,300,297,0,0.001,0,0,0,0,0,1,False,5784,3306,6.7,
+gemini,gemini-3.5-flash-lite,text,5,300,300,298,0,0.001,0,0,0,0,0,1,False,5784,3306,6.4,
+gemini,gemini-3.5-flash-lite,tool,6,50,300,300,0,0.0,0,0,0,0,300,159,False,351553,11128,624.2,
+gemini,gemini-3.5-flash-lite,tool,7,50,300,300,0,0.0,0,0,0,0,300,306,False,676817,11128,969.3,
+gemini,gemini-3.5-flash-lite,tool,8,50,300,300,0,0.0,0,0,0,0,300,159,False,351378,11128,548.3,

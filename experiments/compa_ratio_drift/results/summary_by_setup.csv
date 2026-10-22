@@ -1,0 +1,3 @@
+provider,model,setup,runs,exact_median,exact_min,exact_max,off_by_more_than_0005_median,worst_miss,dropped_or_duplicated_max,bracket_flips_median,ids_where_runs_disagree,tool_calls_median,tokens_per_run_median,seconds_median
+gemini,gemini-3.5-flash-lite,text,5,297,296,298,0,0.016,0,0,3,0,9090,6.6
+gemini,gemini-3.5-flash-lite,tool,3,300,300,300,0,0.0,0,0,0,300,362681,624.2
