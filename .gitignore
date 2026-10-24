@@ -12,6 +12,7 @@ env/
 
 # Vector DB & local artifacts
 chroma_db/
+vector_index/
 *.egg-info/
 .pytest_cache/
 .DS_Store
