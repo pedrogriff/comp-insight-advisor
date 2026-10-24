@@ -83,7 +83,7 @@ class EmbedderTest(unittest.TestCase):
         self.assertEqual(make_embedder("hashing:64").dim, 64)
         emb = make_embedder("ollama:nomic-embed-text")
         self.assertEqual((emb.name, emb.query_prefix, emb.min_similarity),
-                         ("ollama:nomic-embed-text", "search_query: ", 0.55))
+                         ("ollama:nomic-embed-text", "search_query: ", 0.60))
         with self.assertRaises(ValueError):
             make_embedder("ollama")
         with self.assertRaises(ValueError):

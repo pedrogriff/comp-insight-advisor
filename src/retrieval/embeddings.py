@@ -37,9 +37,12 @@ PREFIXES = {
     "nomic-embed-text": ("search_query: ", "search_document: "),
     "embeddinggemma": ("task: search result | query: ", "title: none | text: "),
 }
-# Starting abstain thresholds for the dense score. Tune them from `--evaluate`, which prints
-# the best score for every question, including the ones no clause answers.
-MIN_SIMILARITY = {"hashing": 0.30, "nomic-embed-text": 0.55, "embeddinggemma": 0.45}
+# Abstain thresholds for the dense score. Tune them from `--evaluate` on the dev questions only.
+# It prints the best score for every question, including the ones no clause answers.
+# nomic-embed-text: set on Oct 24 from the run saved in experiments/policy_retrieval/. Its
+# answerable dev questions scored at least 0.607 and its unanswerable ones at most 0.584.
+# The other two are untuned starting points.
+MIN_SIMILARITY = {"hashing": 0.30, "nomic-embed-text": 0.60, "embeddinggemma": 0.45}
 
 
 def normalize(vector: list[float]) -> list[float]:
@@ -159,7 +162,8 @@ class SavedScoresEmbedder:
         self.scores, self.texts_hash = data["scores"], data["texts_hash"]
         self.size = len(data["chunk_ids"])
         family = data["embedder"].split(":", 1)[-1].split(":")[0].split("/")[-1]
-        self.min_similarity = data.get("min_similarity", MIN_SIMILARITY.get(family))
+        # The code's threshold comes first, so a threshold tuned after the run applies to the replay.
+        self.min_similarity = MIN_SIMILARITY.get(family, data.get("min_similarity"))
 
     def embed(self, texts: list[str], kind: str = "document") -> list[list[float]]:
         if kind == "query":
