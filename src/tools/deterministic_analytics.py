@@ -5,6 +5,7 @@ space. Every function queries the synthetic SQLite database and returns a
 compact, pre-verified JSON-serializable dictionary with explicit risk flags.
 """
 
+from contextlib import closing
 from pathlib import Path
 import sqlite3
 from typing import Any
@@ -15,13 +16,15 @@ DEFAULT_DB_PATH = (
     / "synthetic"
     / "comp_insight_advisor.db"
 )
+# Playbook Section 3, Tier 0: no proactive grant for anyone rated rating_1 or rating_2.
+TIER0_RATINGS = ("rating_1", "rating_2")
 
 
 def analyze_org_cliff_and_equity_health(
     vp_org_code: str, db_path: Path = DEFAULT_DB_PATH
 ) -> dict[str, Any]:
     """Computes 2027 cashflow cliff cohorts, peer percentiles, and governance flags."""
-    with sqlite3.connect(db_path) as conn:
+    with closing(sqlite3.connect(db_path)) as conn:
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
 
@@ -100,7 +103,7 @@ def analyze_reactive_offers_and_counters(
     vp_org_code: str, db_path: Path = DEFAULT_DB_PATH
 ) -> dict[str, Any]:
     """Analyzes new-hire offer acceptance rates, counter-offers, and competitor premiums."""
-    with sqlite3.connect(db_path) as conn:
+    with closing(sqlite3.connect(db_path)) as conn:
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
 
@@ -162,8 +165,14 @@ def analyze_reactive_offers_and_counters(
 def simulate_proactive_retention_scenarios(
     vp_org_code: str, job_family: str | None = None, db_path: Path = DEFAULT_DB_PATH
 ) -> dict[str, Any]:
-    """Evaluates 3 Tree-of-Thought intervention branches against the 4-Tier Sizing Rubric."""
-    with sqlite3.connect(db_path) as conn:
+    """Evaluates 3 Tree-of-Thought intervention branches against the 4-Tier Sizing Rubric.
+
+    Tier 0 of playbook Section 3 comes first. Anyone rated rating_1 or rating_2, or granted a
+    proactive award in the past 24 months, gets no proactive grant. The query drops the second
+    group, and every candidate faces a drop of 15 percent or more, so Tier 0's third condition,
+    a drop under 10 percent, cannot apply. Held candidates are counted in held_by_tier0.
+    """
+    with closing(sqlite3.connect(db_path)) as conn:
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
 
@@ -192,14 +201,17 @@ def simulate_proactive_retention_scenarios(
         budget_row = cur.fetchone()
         remaining_budget = float(budget_row["proactive_remaining_usd"]) if budget_row else 0.0
 
-    # Score candidates into Tiers 1, 2, and 3
+    # Hold Tier 0, then score the rest into Tiers 1, 2, and 3
     tier1_cost, tier2_cost, tier3_cost = 0.0, 0.0, 0.0
     tier_counts = {"Tier_1": 0, "Tier_2": 0, "Tier_3": 0}
+    held_by_tier0 = 0
 
     for c in candidates:
         guideline = float(c["equity_refresh_guideline_usd"])
         rating = c["rating_2025"]
-        if rating == "rating_5":
+        if rating in TIER0_RATINGS:
+            held_by_tier0 += 1
+        elif rating == "rating_5":
             tier_counts["Tier_3"] += 1
             tier3_cost += round(guideline * 1.60, -3)
         elif rating == "rating_4" or c["critical_ai_talent_tier"] in ("Tier_1", "Tier_2"):
@@ -218,6 +230,7 @@ def simulate_proactive_retention_scenarios(
         "job_family_filter": job_family or "ALL",
         "remaining_proactive_budget_usd": remaining_budget,
         "eligible_cliff_candidates_by_tier": tier_counts,
+        "held_by_tier0": held_by_tier0,
         "strategic_branches": [
             {
                 "branch_id": "Branch_A_Offer_Posture_Plus_Top_Ceiling",
