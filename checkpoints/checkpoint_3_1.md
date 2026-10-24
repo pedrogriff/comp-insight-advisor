@@ -56,7 +56,7 @@ After the evidence check returns `CONVERGENT` and the driver-fit tool names the 
 2. sends one query for each checklist item a tool flag raises;
 3. fetches every exit note for the cohort by metadata, since the brief needs all of them, not the nearest five.
 
-The writer model sees only the tool figures, the clauses and the notes, and it cites their IDs. BM25 needs no model, so the default run and the 99 unit tests work offline.
+The writer model sees only the tool figures, the clauses and the notes, and it cites their IDs. BM25 needs no model, and the tests replay the embedding model's saved scores, so the default run and the 103 unit tests work offline.
 
 ### 3. How retrieval changes the brief
 
@@ -79,11 +79,11 @@ Retrieval also picks up policy changes without retraining, as the RAG paper show
 - **Sources.** The playbook for rules, the notes for reasons and SQL for tables.
 - **Segmentation.** One chunk per rule, meaning each bullet, numbered item or paragraph, plus the lever table. The lecture's usual 800 to 1,000 tokens would hold a third or more of the playbook and mix the rules it warned against mixing. The 38 chunks run 13 to 161 words, with a median of 30.5. Search reads each chunk with its section heading in front, as DPR puts the article title before each passage, and tags record its levers and population. On 24 test questions, rule chunks and 120-word windows with 30 words of overlap each found the right clause in the top 3 for 11. The windows carried 133 words of context on average against 47, and a window spans up to 5 rules, so a citation can't point to one.
 - **How many results.** 3 clauses per lever, inside the lecture's usual 2 or 3, plus 1 per checklist item and every exit note in the cohort. A larger k adds recall but also noise and tokens, so when a limit the code applies is missing from the 3, an exact lookup adds its clause instead, as it did for the level review's 2-year rule and the Tier 0 rule for grants.
-- **When to return nothing.** A clause must match half of the query's terms or clear a similarity threshold. A quarter raised the score on the 16 tuning questions from 8 to 12, but on 8 held-out questions it still found 3 and answered a question the playbook doesn't cover. Lab 3.2 warned against tuning on the test set, so the bar stays at half, and all 4 unanswerable questions return nothing.
+- **When to return nothing.** A clause must match half of the query's terms or score at least 0.60 with the embedding model. Lab 3.2 warned against tuning on the test set, so the 0.60 comes from the 16 tuning questions alone. There, every answerable question had a clause scoring at least 0.607, and no unanswerable one had a clause above 0.584. Lowering the keyword bar to a quarter raised tuning hits from 8 to 12, but on the 8 held-out questions it still found 3 and answered a question the playbook doesn't cover, so the bar stays at half.
 
 ### 5. Failure mode: a relevant clause for the wrong population
 
-The lecture called this a similarity trap, where high similarity means shared vocabulary, not the correct answer. In the playbook it appears as two populations. Section 2.1 lets the Offers Desk approve new-hire offers up to a 1.00 compa-ratio and 1.20 times the equity guideline, and Section 6.2 caps raises for current employees at 0.95. Asked "Is there a compa-ratio cap for equity?", BM25 ranks the new-hire clause first, and a writer that reads it can repeat our 2.1 error. Embeddings can make it worse, because the two clauses mean nearly the same thing.
+The lecture called this a similarity trap, where high similarity means shared vocabulary, not the correct answer. In the playbook it appears as two populations. Section 2.1 lets the Offers Desk approve new-hire offers up to a 1.00 compa-ratio and 1.20 times the equity guideline, and Section 6.2 caps raises for current employees at 0.95. Asked "Is there a compa-ratio cap for equity?", BM25 ranks the new-hire clause first, and a writer that reads it can repeat our 2.1 error. The embedding model barely separates the two. It scores the 0.80 floor for current employees at 0.700 and the new-hire clause at 0.698, so hybrid search still ranks the new-hire clause first.
 
 Three checks manage the risk:
 
@@ -91,4 +91,12 @@ Three checks manage the risk:
 2. **Clause verification.** Slide 29 calls a nearby vector "a candidate, not proof". Each rule in a draft cites a clause ID, and a Python check confirms that each number appears in that clause and that the clause governs the lever. "1.20" for a retention grant fails, because it appears only in a new-hire clause.
 3. **Code against policy.** Tools compute every dollar, and the limit check confirms that each limit the code applies, such as the 0.95 lift ceiling or the ratings Tier 0 excludes from grants, appears in a clause for that lever.
 
-Keyword search found the right clause for 11 of the 24 answerable questions, and all 13 misses use a partner's words rather than the playbook's. "Lowest pay relative to market for current staff" returns nothing, for example. The embedding model is there to close that gap, and Slide 54's comparison of dense, keyword and hybrid search on the same questions is the next measurement.
+As Slide 54 advises, we compared dense search with keyword and hybrid baselines on the same 28 questions:
+
+| Search | Tuning: right clause in top 3 | Held-out: right clause in top 3 | Unanswerable: nothing returned | Context words per question |
+| :--- | ---: | ---: | ---: | ---: |
+| Keyword, BM25 | 8 of 16 | 3 of 8 | 4 of 4 | 47 |
+| Dense, `nomic-embed-text` | 16 of 16 | 8 of 8 | 3 of 4 | 113 |
+| Hybrid, fused by rank | 16 of 16 | 7 of 8 | 3 of 4 | 122 |
+
+All 13 keyword misses use a partner's words rather than the playbook's, such as the held-out "Can anyone on staff be paid far under market?", where dense search ranks the 0.80 floor rule first. Both embedding modes also answer the held-out "How much is the annual bonus for sales staff?" with a level review clause that mentions the bonus target. Hybrid search lost "Who signs off on the largest retention awards?" because keyword matches on "sign-off" pushed the Tier 3 rule out of the top 3. With 19 paraphrases among the 24 answerable questions, the Checkpoint 7.1 evaluation adds questions in the playbook's own terms, such as "Tier 0", before choosing between dense and hybrid. Neither removes the population trap, so the filters and the clause check stay.
