@@ -222,7 +222,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     table.data-table th { background: #f1f5f9; color: #0f172a; font-weight: 700; text-align: left;
       border: 1px solid #cbd5e1; padding: 3px 6px; }
     table.data-table td { border: 1px solid #e2e8f0; padding: 3px 6px; vertical-align: top; color: #334155; }
-    table.data-table td:nth-child(2) { color: #b91c1c; font-weight: 600; white-space: nowrap; }
+    table.data-table.flags td:nth-child(2) { color: #b91c1c; font-weight: 600; white-space: nowrap; }
+    table.data-table th.num, table.data-table td.num { text-align: right; }
+    table.data-table td.num { white-space: nowrap; font-variant-numeric: tabular-nums; }
+    table.data-table:not(.flags) td:first-child { white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -434,12 +437,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <li>sends one query for each checklist item a tool flag raises;</li>
       <li>fetches every exit note for the cohort by metadata, since the brief needs all of them, not the nearest five.</li>
     </ol>
-    <p>The writer model sees only the tool figures, the clauses and the notes, and it cites their IDs. BM25 needs no model, so the default run and the 99 unit tests work offline.</p>
+    <p>The writer model sees only the tool figures, the clauses and the notes, and it cites their IDs. BM25 needs no model, and the tests replay the embedding model's saved scores, so the default run and the 103 unit tests work offline.</p>
   </div>
   <div class="section-block">
     <h3 class="sub-header">3. How retrieval changes the brief</h3>
     <p><code>VP_CLOUD_AI</code> research scientists, the case the 2.1 graders raised, show the change. The tools return the same numbers either way. Of 4 departures after a counter-offer, 2 cite level, 1 base salary and 1 equity. Option A fits the $2,150,000 remaining budget at $1,524,000 but addresses 1 departure, and Option C addresses all 4 at $4,006,600.</p>
-    <table class="data-table">
+    <table class="data-table flags">
       <thead><tr><th>Checklist item from the tools</th><th>Without retrieval</th><th>With retrieval</th></tr></thead>
       <tbody>
         <tr><td>Grants address 1 of 4 departures</td><td>Unsupported</td><td>Section 6.1, a grant "changes neither base salary nor level"</td></tr>
@@ -458,19 +461,28 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <li><strong>Sources.</strong> The playbook for rules, the notes for reasons and SQL for tables.</li>
       <li><strong>Segmentation.</strong> One chunk per rule, meaning each bullet, numbered item or paragraph, plus the lever table. The lecture's usual 800 to 1,000 tokens would hold a third or more of the playbook and mix the rules it warned against mixing. The 38 chunks run 13 to 161 words, with a median of 30.5. Search reads each chunk with its section heading in front, as DPR puts the article title before each passage, and tags record its levers and population. On 24 test questions, rule chunks and 120-word windows with 30 words of overlap each found the right clause in the top 3 for 11. The windows carried 133 words of context on average against 47, and a window spans up to 5 rules, so a citation can't point to one.</li>
       <li><strong>How many results.</strong> 3 clauses per lever, inside the lecture's usual 2 or 3, plus 1 per checklist item and every exit note in the cohort. A larger k adds recall but also noise and tokens, so when a limit the code applies is missing from the 3, an exact lookup adds its clause instead, as it did for the level review's 2-year rule and the Tier 0 rule for grants.</li>
-      <li><strong>When to return nothing.</strong> A clause must match half of the query's terms or clear a similarity threshold. A quarter raised the score on the 16 tuning questions from 8 to 12, but on 8 held-out questions it still found 3 and answered a question the playbook doesn't cover. Lab 3.2 warned against tuning on the test set, so the bar stays at half, and all 4 unanswerable questions return nothing.</li>
+      <li><strong>When to return nothing.</strong> A clause must match half of the query's terms or score at least 0.60 with the embedding model. Lab 3.2 warned against tuning on the test set, so the 0.60 comes from the 16 tuning questions alone. There, every answerable question had a clause scoring at least 0.607, and no unanswerable one had a clause above 0.584. Lowering the keyword bar to a quarter raised tuning hits from 8 to 12, but on the 8 held-out questions it still found 3 and answered a question the playbook doesn't cover, so the bar stays at half.</li>
     </ul>
   </div>
   <div class="section-block">
     <h3 class="sub-header">5. Failure mode: a relevant clause for the wrong population</h3>
-    <p>The lecture called this a similarity trap, where high similarity means shared vocabulary, not the correct answer. In the playbook it appears as two populations. Section 2.1 lets the Offers Desk approve new-hire offers up to a 1.00 compa-ratio and 1.20 times the equity guideline, and Section 6.2 caps raises for current employees at 0.95. Asked "Is there a compa-ratio cap for equity?", BM25 ranks the new-hire clause first, and a writer that reads it can repeat our 2.1 error. Embeddings can make it worse, because the two clauses mean nearly the same thing.</p>
+    <p>The lecture called this a similarity trap, where high similarity means shared vocabulary, not the correct answer. In the playbook it appears as two populations. Section 2.1 lets the Offers Desk approve new-hire offers up to a 1.00 compa-ratio and 1.20 times the equity guideline, and Section 6.2 caps raises for current employees at 0.95. Asked "Is there a compa-ratio cap for equity?", BM25 ranks the new-hire clause first, and a writer that reads it can repeat our 2.1 error. The embedding model barely separates the two. It scores the 0.80 floor for current employees at 0.700 and the new-hire clause at 0.698, so hybrid search still ranks the new-hire clause first.</p>
     <p>Three checks manage the risk:</p>
     <ol class="numbered">
       <li><strong>Filters.</strong> Chunks carry their levers and population, and the agent's queries filter on the lever, so a retention query never sees Section 2.1. A playbook section without tags fails a unit test.</li>
       <li><strong>Clause verification.</strong> Slide 29 calls a nearby vector "a candidate, not proof". Each rule in a draft cites a clause ID, and a Python check confirms that each number appears in that clause and that the clause governs the lever. "1.20" for a retention grant fails, because it appears only in a new-hire clause.</li>
       <li><strong>Code against policy.</strong> Tools compute every dollar, and the limit check confirms that each limit the code applies, such as the 0.95 lift ceiling or the ratings Tier 0 excludes from grants, appears in a clause for that lever.</li>
     </ol>
-    <p>Keyword search found the right clause for 11 of the 24 answerable questions, and all 13 misses use a partner's words rather than the playbook's. "Lowest pay relative to market for current staff" returns nothing, for example. The embedding model is there to close that gap, and Slide 54's comparison of dense, keyword and hybrid search on the same questions is the next measurement.</p>
+    <p>As Slide 54 advises, we compared dense search with keyword and hybrid baselines on the same 28 questions:</p>
+    <table class="data-table">
+      <thead><tr><th>Search</th><th class="num">Tuning: right clause in top 3</th><th class="num">Held-out: right clause in top 3</th><th class="num">Unanswerable: nothing returned</th><th class="num">Context words per question</th></tr></thead>
+      <tbody>
+        <tr><td>Keyword, BM25</td><td class="num">8 of 16</td><td class="num">3 of 8</td><td class="num">4 of 4</td><td class="num">47</td></tr>
+        <tr><td>Dense, <code>nomic-embed-text</code></td><td class="num">16 of 16</td><td class="num">8 of 8</td><td class="num">3 of 4</td><td class="num">113</td></tr>
+        <tr><td>Hybrid, fused by rank</td><td class="num">16 of 16</td><td class="num">7 of 8</td><td class="num">3 of 4</td><td class="num">122</td></tr>
+      </tbody>
+    </table>
+    <p>All 13 keyword misses use a partner's words rather than the playbook's, such as the held-out "Can anyone on staff be paid far under market?", where dense search ranks the 0.80 floor rule first. Both embedding modes also answer the held-out "How much is the annual bonus for sales staff?" with a level review clause that mentions the bonus target. Hybrid search lost "Who signs off on the largest retention awards?" because keyword matches on "sign-off" pushed the Tier 3 rule out of the top 3. With 19 paraphrases among the 24 answerable questions, the Checkpoint 7.1 evaluation adds questions in the playbook's own terms, such as "Tier 0", before choosing between dense and hybrid. Neither removes the population trap, so the filters and the clause check stay.</p>
   </div>
 
 </body>
