@@ -80,6 +80,17 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       letter-spacing: -0.01em;
     }
 
+    .correction-note {
+      font-size: 7.4pt;
+      color: #92400e;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 4px;
+      padding: 3px 7px;
+      margin-top: 6px;
+      line-height: 1.35;
+    }
+
     .meta-box {
       text-align: right;
       font-size: 8pt;
@@ -326,6 +337,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <div class="institution-name">Carnegie Mellon University &bull; School of Computer Science</div>
       <div class="program-name">Executive Education: Agentic AI Program &bull; Capstone Project</div>
       <h1 class="doc-title">Checkpoint 2.1: Reasoning Loops, Memory Architecture &amp; Tool Usage</h1>
+      <div class="correction-note">Corrected Oct 22, 2026, after grading: Section 3 quotes the playbook's real 1.20 equity guideline rule, and Section 4 no longer says tool output keeps every step grounded. The graded copy on Canvas is unchanged.</div>
     </div>
     <div class="meta-box">
       <div><strong>Student:</strong> Pedro Griff Marcincowski</div>
@@ -614,7 +626,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <div class="step-item">
       <div class="step-badge">3</div>
       <div class="step-content">
-        <p><strong>Retrieval of policy rules.</strong> Semantic search over the synthetic governance playbook returns exact rules, such as the 1.20 post-grant compa-ratio cap, which sit outside any model's training data.</p>
+        <p><strong>Retrieval of policy rules.</strong> Semantic search over the synthetic governance playbook returns the passages nearest the query, such as the rule that new-hire offers up to a 1.00 compa-ratio and 1.20 times the equity guideline need only Offers Desk approval. The brief cites the section each rule came from.</p>
       </div>
     </div>
 
@@ -637,7 +649,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
     <div class="card-item accent-amber">
       <div class="card-title">Invented intermediate results</div>
-      <div class="card-body">An open-loop model invents intermediate numbers when arithmetic or a comparison such as 9.11 versus 9.9 stays in text. Pausing after each action and inserting the Python output keeps every step grounded.</div>
+      <div class="card-body">An open-loop model invents intermediate numbers when arithmetic or a comparison such as 9.11 versus 9.9 stays in text. Pausing after each action and inserting the Python output puts real numbers in every prompt, but the model can still ignore them. In Lab 2.2, Qwen2-1.5B read "9.11 is less than 9.9" twice and answered "equal". So code routes on the evidence check's labels, and the verifier blocks any figure no tool returned.</div>
     </div>
 
     <div class="card-item accent-emerald">
