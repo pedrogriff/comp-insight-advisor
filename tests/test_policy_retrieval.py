@@ -13,9 +13,11 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.retrieval.embeddings import HashingEmbedder, make_embedder  # noqa: E402
 from src.retrieval.grounded_options import ground_options  # noqa: E402
-from src.retrieval.policy_search import (PLAYBOOK_PATH, PolicyRetriever, check_limits, covers, evaluate,  # noqa: E402
-                                         load_policy_chunks, save_scores, verify_rule)
+from src.retrieval.policy_search import (COHORTS, PLAYBOOK_PATH, PolicyRetriever, check_limits, covers,  # noqa: E402
+                                         evaluate, load_policy_chunks, save_scores, verify_rule)
 from src.tools.interview_search import NoteIndex, load_notes  # noqa: E402
+
+SAVED_NOMIC = PROJECT_ROOT / "experiments" / "policy_retrieval" / "nomic-embed-text.json"
 
 
 class ChunkingTest(unittest.TestCase):
@@ -177,6 +179,66 @@ class SavedScoresTest(unittest.TestCase):
             changed.write_text(PLAYBOOK_PATH.read_text(encoding="utf-8").replace("0.95", "0.90"), encoding="utf-8")
             with self.assertRaises(ValueError):
                 PolicyRetriever(saved, path=changed)
+
+
+class NomicRunTest(unittest.TestCase):
+    """Replays the nomic-embed-text scores saved on Oct 24, which back the numbers in checkpoint 3.1
+    and the README. A playbook change stops the replay with a ValueError. Then rerun --save."""
+
+    NAME = "saved:ollama:nomic-embed-text"
+
+    @classmethod
+    def setUpClass(cls):
+        cls.saved = make_embedder(f"saved:{SAVED_NOMIC}")
+        cls.retriever = PolicyRetriever(cls.saved)
+        cls.reports = {split: evaluate(cls.saved, split=split) for split in ("dev", "heldout", None)}
+
+    def test_the_threshold_comes_from_the_tuning_questions(self):
+        self.assertEqual(self.saved.min_similarity, 0.60)  # the file says 0.55, and the code's value wins
+        best = {"answerable": [], "no_answer": []}
+        for row in self.reports["dev"]["cases"]:
+            best["no_answer" if row["kind"] == "no_answer" else "answerable"].append(row["best_dense"])
+        self.assertEqual((min(best["answerable"]), max(best["no_answer"])), (0.6074, 0.5841))
+        dev = self.reports["dev"]["configs"]
+        for mode in ("dense", "hybrid"):
+            got = dev[f"{mode} {self.NAME}"]
+            self.assertEqual((got["hit_at_3"], got["abstained_correctly"]), ("16/16", "2/2"), mode)
+
+    def test_keyword_dense_and_hybrid_on_the_same_questions(self):
+        keys = ("hit_at_3", "abstained_correctly", "mean_context_words", "wrong_population_first")
+        names = ("bm25 rules", f"dense {self.NAME}", f"hybrid {self.NAME}")
+        configs = self.reports[None]["configs"]
+        self.assertEqual({name: tuple(configs[name][key] for key in keys) for name in names},
+                         {"bm25 rules": ("11/24", "4/4", 47, 0), f"dense {self.NAME}": ("24/24", "3/4", 113, 0),
+                          f"hybrid {self.NAME}": ("23/24", "3/4", 122, 0)})
+        held = self.reports["heldout"]["configs"]
+        self.assertEqual([(held[name]["hit_at_3"], held[name]["abstained_correctly"]) for name in names],
+                         [("3/8", "2/2"), ("8/8", "1/2"), ("7/8", "1/2")])
+        rows = {row["case_id"]: row for row in self.reports["heldout"]["cases"]}
+        self.assertEqual([rows["H3"][f"{mode} {self.NAME}"]["hit"] for mode in ("dense", "hybrid")], [True, False])
+        self.assertEqual(rows["H10"][f"dense {self.NAME}"]["top"], ["6.3:cost-candidate"])
+        kinds = [row["kind"] for row in self.reports[None]["cases"] if row["kind"] != "no_answer"]
+        self.assertEqual((len(kinds), kinds.count("paraphrase")), (24, 19))
+
+    def test_the_near_miss_and_the_paraphrase(self):
+        query = "Is there a compa-ratio cap for equity?"
+        dense = self.retriever.search(query, k=2, mode="dense")
+        self.assertEqual([(h["id"], h["dense"]) for h in dense], [("6.2:floor", 0.6997), ("2.1:thresholds", 0.6975)])
+        self.assertEqual(self.retriever.search(query, k=3)[0]["id"], "2.1:thresholds")
+        kept = self.retriever.search(query, k=3, filters={"levers": "retention_grant"})
+        self.assertNotIn("2.1:thresholds", [h["id"] for h in kept])
+        paraphrase = "Can anyone on staff be paid far under market?"  # held-out H1
+        self.assertEqual(PolicyRetriever().search(paraphrase), [])
+        self.assertEqual(self.retriever.search(paraphrase, mode="dense")[0]["id"], "6.2:floor")
+
+    def test_hybrid_grounding_backs_the_same_checklist(self):
+        notes = NoteIndex(load_notes())
+        for org, family in COHORTS:
+            bm25 = ground_options(org, family, PolicyRetriever(), notes)
+            hybrid = ground_options(org, family, self.retriever, notes)
+            cited = [[item["clause"]["id"] for item in run["checklist"]] for run in (bm25, hybrid)]
+            self.assertEqual(cited[0], cited[1], family)
+            self.assertEqual((hybrid["unsupported"], hybrid["policy_conflicts"]), (0, []), family)
 
 
 if __name__ == "__main__":
