@@ -1,5 +1,7 @@
 # Checkpoint 2.1: Reasoning loops, memory architecture, and tool usage
 
+*Corrected on Oct 22, 2026, after grading. Section 3 now quotes the playbook's real 1.20 equity guideline rule, and Section 4 no longer says tool output keeps every step grounded. The graded copy on Canvas is unchanged.*
+
 ## System architecture diagram
 
 ```mermaid
@@ -63,7 +65,7 @@ Each tool covers a task that a language model alone gets wrong:
 
 1. **Computation in SQLite and Pandas.** Next-token prediction guesses probable digits instead of computing them. Python computes compa-ratios, cashflow drops and remaining budget across 2,000 employees and returns counts plus at most 15 flagged rows, never the raw roster.
 2. **Grounding on small samples.** The evidence tool computes Wilson intervals for rates and Student's t intervals for premiums, then flags whether the evidence supports spend and whether the brief must disclose uncertainty.
-3. **Retrieval of policy rules.** Semantic search over the synthetic governance playbook returns exact rules, such as the 1.20 post-grant compa-ratio cap, which sit outside any model's training data.
+3. **Retrieval of policy rules.** Semantic search over the synthetic governance playbook returns the passages nearest the query, such as the rule that new-hire offers up to a 1.00 compa-ratio and 1.20 times the equity guideline need only Offers Desk approval. The brief cites the section each rule came from.
 4. **Verification before delivery.** A Python check matches every dollar figure, percentage and headcount in the draft to a tool output with its source table and data date. It blocks any figure it cannot trace, and the agent regenerates that section.
 
 ### 4. Improvements over a prompt-only approach
@@ -71,5 +73,5 @@ Each tool covers a task that a language model alone gets wrong:
 The design resolves three failure modes of a prompt-only approach:
 
 - **Small samples read as settled facts.** In `VP_CLOUD_AI`, 35 of 116 research scientists face a cliff, and competing premiums average 29.1 percent, interval 25.3 to 32.8. New-hire acceptance of 53.8 percent rests on 13 offers, interval 29.1 to 76.8. A prompt-only model reports a settled breach of the 65 percent floor, misses that 5 of the 10 lost offers cite base salary or level, which an equity grant cannot fix, and miscalculates grant totals. Our agent rates the evidence moderate and states both the sample size and the base-salary driver.
-- **Invented intermediate results.** An open-loop model invents intermediate numbers when arithmetic or a comparison such as 9.11 versus 9.9 stays in text. Pausing after each action and inserting the Python output keeps every step grounded.
+- **Invented intermediate results.** An open-loop model invents intermediate numbers when arithmetic or a comparison such as 9.11 versus 9.9 stays in text. Pausing after each action and inserting the Python output puts real numbers in every prompt, but the model can still ignore them. In Lab 2.2, Qwen2-1.5B read "9.11 is less than 9.9" twice and answered "equal". So code routes on the evidence check's labels, and the verifier blocks any figure no tool returned.
 - **Forgetting partners, or drifting from policy.** A prompt-only model forgets scoping rules after every chat, and unguarded memory could loosen policy limits. The three-session rule and the governance lock keep partner habits while every policy ceiling stays in force.
