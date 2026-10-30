@@ -5,10 +5,12 @@ the scorers read it, and "text" stays the passage a brief quotes. Search runs in
 
 1. Metadata filters narrow the pool, for example to clauses that govern one lever.
 2. BM25, with the glossary expansion from src.tools.interview_search, ranks the pool, and a
-   dense embedder ranks it by cosine similarity.
+   dense embedder ranks it by cosine similarity. Optional `boost` terms add to the BM25 score
+   at half weight, so the cross-lever router can rank a side's clauses by its lever's terms.
 3. A relevance gate keeps a document only if it matches at least half of the query's terms
-   or its dense score clears the embedder's threshold. When nothing passes, search returns
-   an empty list, so the agent says no clause covers the question instead of quoting a near miss.
+   or its dense score clears the embedder's threshold. Boost terms don't count toward that
+   half. When nothing passes, search returns an empty list, so the agent says no clause
+   covers the question instead of quoting a near miss.
 4. Reciprocal rank fusion merges the two rankings: score = sum of 1 / (60 + rank).
 
 `load_or_build` keeps the vectors in a SQLite file with the embedder's name and a hash of the
@@ -76,7 +78,7 @@ class HybridIndex:
                     tf + K1 * (1 - B + B * length / self.avg_length))
         return score
 
-    def _lexical(self, query: str, pool: list[int], expand: bool) -> dict[int, tuple[float, float]]:
+    def _lexical(self, query: str, pool: list[int], expand: bool, boost: str = "") -> dict[int, tuple[float, float]]:
         terms = list(dict.fromkeys(tokenize(query)))
         if not terms:
             return {}
@@ -85,6 +87,10 @@ class HybridIndex:
             for t in terms:
                 for sib in _siblings(t):
                     weighted.setdefault(sib, EXPANSION_WEIGHT)
+        # Boost terms help rank the pool at half weight but never count toward coverage, so they
+        # can't lift a document past the relevance gate.
+        for t in tokenize(boost):
+            weighted.setdefault(t, EXPANSION_WEIGHT)
         out = {}
         for i in pool:
             present = self.terms[i]
@@ -105,13 +111,14 @@ class HybridIndex:
     # Search ------------------------------------------------------------------
     def search(self, query: str, k: int = 3, mode: str = "hybrid", filters: dict[str, Any] | None = None,
                fetch_k: int = 20, expand: bool = True, min_coverage: float = 0.5,
-               min_similarity: float | None = None, use_mmr: bool = False, lam: float = 0.5) -> list[dict[str, Any]]:
+               min_similarity: float | None = None, use_mmr: bool = False, lam: float = 0.5,
+               boost: str = "") -> list[dict[str, Any]]:
         if mode not in MODES:
             raise ValueError(f"mode must be one of {MODES}")
         if mode != "bm25" and self.vectors is None:
             raise ValueError("dense and hybrid search need an embedder")
         pool = [i for i, d in enumerate(self.docs) if matches(d, filters)]
-        lexical = self._lexical(query, pool, expand)
+        lexical = self._lexical(query, pool, expand, boost)
         dense: dict[int, float] = {}
         if mode != "bm25" and pool:
             qvec = self.embedder.embed([query], kind="query")[0]
