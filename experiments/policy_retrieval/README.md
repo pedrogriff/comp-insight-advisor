@@ -41,3 +41,12 @@ A replay uses the 0.60 threshold in `MIN_SIMILARITY` in `src/retrieval/embedding
 - With hybrid search, the three cohorts get the same checklist clauses as with keyword search, and no checklist item goes unsupported.
 
 `NomicRunTest` in `tests/test_policy_retrieval.py` replays this file and checks these results.
+
+## The cross-lever router
+
+The file predates `src/retrieval/cross_lever.py`, so it holds no scores for the queries the router sends, and `python3 -m src.retrieval.cross_lever --evaluate --embedder saved:...` stops with a message that names the first missing query. Since Oct 30, `--save` also writes those queries. To score the router with the model, save to a new file and keep this one, because `NomicRunTest` pins its exact scores:
+
+```bash
+python3 -m src.retrieval.policy_search --embedder ollama:nomic-embed-text --save experiments/policy_retrieval/nomic-embed-text-router.json
+python3 -m src.retrieval.cross_lever --evaluate --embedder saved:experiments/policy_retrieval/nomic-embed-text-router.json
+```
