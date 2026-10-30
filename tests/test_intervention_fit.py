@@ -194,7 +194,8 @@ class FixtureTest(unittest.TestCase):
         self.assertFalse(_option(fit, "B")["partial_fit"])
 
     def test_option_costs_add_lever_costs_to_grant_branches(self) -> None:
-        roster = [_person("E1", "IC3", 0.90, 230000.0, rating="rating_4"), _person("E2", "IC2", 0.90, 200000.0)]
+        # E1 is costed for a promotion only and E2 for a lift only. tests/test_joint_pricing.py covers one person with both.
+        roster = [_person("E1", "IC3", 0.97, 230000.0, rating="rating_4"), _person("E2", "IC2", 0.90, 200000.0)]
         offers = _losses("Reactive_Counter_Offer", {"Level_Up_Offer": 2, "Base_Salary_Cap": 1, "Total_Equity_Size": 1})
         db = _make_db(self.dir / "cost.db", roster, offers, remaining=200000.0)
         result = assess_intervention_fit(ORG, FAMILY, db)
@@ -234,7 +235,8 @@ class SyntheticDatabaseTest(unittest.TestCase):
         self.assertEqual(_lever(result, "base_adjustment")["candidates"], 18)
         self.assertEqual(_lever(result, "base_adjustment")["held_by_tier0"], 9)
         self.assertEqual(_lever(result, "retention_grant")["held_by_tier0"], 9)
-        self.assertEqual([o["first_year_cost_usd"] for o in result["options"]], [1524000.0, 2648000.0, 4006600.0])
+        # Option C, with its joint pricing credit, is pinned in tests/test_joint_pricing.py.
+        self.assertEqual([o["first_year_cost_usd"] for o in result["options"]][:2], [1524000.0, 2648000.0])
         self.assertEqual(_lever(result, "level_review")["candidates"], 9)
         self.assertEqual(result["governance"]["compa_floor_breaches"], 5)
         self.assertEqual(_option(result, "C")["departures_addressed"], 4)
