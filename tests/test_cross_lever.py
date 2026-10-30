@@ -25,6 +25,7 @@ from src.retrieval.policy_search import LEVER_QUERIES, PolicyRetriever, load_pol
 GRADERS = "Compare the equity caps for new hires versus current staff"
 TRAP = "Is there a compa-ratio cap for equity?"
 TWO_TOPICS = "Compare parental leave for new hires with retention grant tiers for current staff"
+SAVED_ROUTER = PROJECT_ROOT / "experiments" / "policy_retrieval" / "nomic-embed-text-router.json"
 
 
 class PlanTest(unittest.TestCase):
@@ -198,6 +199,45 @@ class EvaluationTest(unittest.TestCase):
                 self.assertIn(lever, ("any", *LEVER_QUERIES), case["case_id"])
                 self.assertTrue(set(relevant) <= ids, case["case_id"])
         self.assertIn("equity caps", router_queries())
+
+
+class NomicRouterRunTest(unittest.TestCase):
+    """Replays the router's nomic-embed-text scores, saved on Oct 30 on the personal machine, in hybrid mode.
+
+    The held-out questions were scored once with the model, after the design froze on keyword search.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.retriever = PolicyRetriever(make_embedder(f"saved:{SAVED_ROUTER}"))
+
+    def test_hybrid_answers_more_sides_but_fills_two_empty_ones(self):
+        self.assertEqual(self.retriever.mode, "hybrid")
+        expected = {
+            "dev": {"one query, no filter": ("5/9", "1/2", "0/5"), "one query, first side's filter": ("4/9", "1/2", "0/5"),
+                    "one query per side": ("9/9", "2/2", "5/5")},
+            "heldout": {"one query, no filter": ("5/11", "2/3", "2/7"), "one query, first side's filter": ("4/11", "1/3", "0/7"),
+                        "one query per side": ("9/11", "1/3", "4/7")},
+        }
+        keys = ("sides_answered", "empty_sides_kept_empty", "questions_fully_right")
+        for split, want in expected.items():
+            configs = evaluate_cross_lever(self.retriever, split=split)["configs"]
+            self.assertEqual({name: tuple(m[key] for key in keys) for name, m in configs.items()}, want, split)
+        # Known limit: the playbook has no repricing rule, keyword search leaves both sides empty,
+        # and dense similarity fills both.
+        question = "How do stock option repricing rules differ for new hires and current staff?"
+        filled = {g["side"]: [c["id"] for c in g["clauses"]] for g in search_cross_lever(self.retriever, question)["groups"]}
+        self.assertEqual(filled, {"new_hires/offer_band_review": ["2.1:thresholds"],
+                                  "current_employees/retention_grant": ["3:tier-1", "3:tier-2", "4:stale-promotion"]})
+        self.assertTrue(all(g["status"] == "no_clause" for g in search_cross_lever(PolicyRetriever(), question)["groups"]))
+
+    def test_routing_loses_two_dev_hits_and_gains_one_held_out(self):
+        dev = evaluate_routing(self.retriever, split="dev")
+        self.assertEqual((dev["one_query_hits"], dev["routed_hits"], dev["answerable"]), (16, 14, 16))
+        self.assertEqual((dev["lost"], dev["gained"], dev["routed_abstained"], dev["no_answer"]), (["P12", "P16"], [], 2, 2))
+        held = evaluate_routing(self.retriever, split="heldout")
+        self.assertEqual((held["one_query_hits"], held["routed_hits"], held["answerable"]), (7, 8, 8))
+        self.assertEqual((held["lost"], held["gained"], held["routed_abstained"], held["no_answer"]), ([], ["H3"], 1, 2))
 
 
 if __name__ == "__main__":
