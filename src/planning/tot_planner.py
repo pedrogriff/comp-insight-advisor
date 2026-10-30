@@ -44,7 +44,8 @@ from typing import Any
 
 from src.tools.deterministic_analytics import DEFAULT_DB_PATH, simulate_proactive_retention_scenarios
 from src.tools.intervention_fit import (DEPARTURE_EVENT, HIRING_EVENT, LEVERS, POLICY, ROSTER_COLUMNS,
-                                        _base_adjustment, _driver_counts, _level_review, assess_intervention_fit)
+                                        _base_adjustment, _driver_counts, _level_review, assess_intervention_fit,
+                                        joint_pricing)
 
 # Grant sizing: (branch in simulate_proactive_retention_scenarios, tiers it funds). Top ceiling funds
 # Tier 3 and half of Tier 2, as template Option A does.
@@ -76,8 +77,8 @@ def cohort_facts(vp_org_code: str, job_family: str, db_path: Path = DEFAULT_DB_P
     tiers = grants["eligible_cliff_candidates_by_tier"]
     branch_cost = {b["branch_id"]: float(b["estimated_proactive_cost_usd"]) for b in grants["strategic_branches"]}
     base, level = _base_adjustment(roster, cliff), _level_review(cliff)
-    # Employees who get a base lift and are also costed for a promotion.
-    both = [r for r in cliff if _base_adjustment([r], [r])["candidates"] and _level_review([r])["costed"]]
+    # The same rule as Option C: a base lift and a promotion for one employee count once.
+    joint = joint_pricing(cliff)
     actions: dict[tuple[str, str], dict[str, float]] = {}
     for lever, sizing in ACTIONS:
         if lever == "retention_grant":
@@ -92,8 +93,8 @@ def cohort_facts(vp_org_code: str, job_family: str, db_path: Path = DEFAULT_DB_P
         actions[(lever, sizing)] = {"eligible": eligible, "cost_usd": float(cost)}
     return {"scope": {"vp_org_code": vp_org_code, "job_family": job_family}, "departures": departures,
             "declined": declined, "remaining_budget_usd": float(budget[0]) if budget else 0.0, "tiers": tiers,
-            "actions": actions, "lift_and_promotion": len(both),
-            "joint_pricing_credit_usd": float(_base_adjustment(both, both)["annual_cost_usd"]) if both else 0.0}
+            "actions": actions, "lift_and_promotion": joint["employees"],
+            "joint_pricing_credit_usd": joint["credit_usd"]}
 
 
 def evaluate(facts: dict[str, Any], plan: tuple[tuple[str, str], ...]) -> dict[str, Any]:
