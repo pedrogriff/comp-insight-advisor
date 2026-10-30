@@ -22,7 +22,8 @@ From the repo root:
 
 `--save` writes the model's score for every question and agent query against every clause, so
 the last command reproduces the run, and any change to the gate or the fusion can be scored
-again, without the model.
+again, without the model. Since Oct 30 it also saves every query the cross-lever router sends
+for the test questions (`src.retrieval.cross_lever.router_queries()`).
 """
 
 from __future__ import annotations
@@ -249,7 +250,8 @@ def save_scores(embedder, out_path: str | Path, cases_path: Path = CASES_PATH,
     chunks = load_policy_chunks(path)
     texts = [c["search_text"] for c in chunks]
     cases = json.loads(Path(cases_path).read_text(encoding="utf-8"))
-    queries = list(dict.fromkeys([c["query"] for c in cases] + DEMO_QUERIES + agent_queries()))
+    from src.retrieval.cross_lever import router_queries  # here, to avoid an import cycle
+    queries = list(dict.fromkeys([c["query"] for c in cases] + DEMO_QUERIES + agent_queries() + router_queries()))
     docs, vecs = embedder.embed(texts, kind="document"), embedder.embed(queries, kind="query")
     scores = {q: [round(dot(v, d), 5) for d in docs] for q, v in zip(queries, vecs)}
     head = {"embedder": embedder.name, "min_similarity": getattr(embedder, "min_similarity", None),
