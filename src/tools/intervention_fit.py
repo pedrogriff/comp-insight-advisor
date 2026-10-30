@@ -20,7 +20,8 @@ Example:
     assess_intervention_fit("VP_CLOUD_AI", "RESEARCH_SCI") finds 4 departures.
     2 cite level, 1 base salary and 1 equity. A retention grant addresses 1 of
     the 4, so default_lever_mismatch is true and Option C adds base
-    adjustments and level reviews to the grants.
+    adjustments and level reviews to the grants. 7 employees qualify for
+    both, and joint_pricing counts each of them once.
 
 Standard library only.
 """
@@ -227,6 +228,23 @@ def _level_review(cliff: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def joint_pricing(cliff: list[dict[str, Any]]) -> dict[str, Any]:
+    """Prices a base lift and a promotion for the same employee once.
+
+    On the synthetic ladder the next level's market reference is at least 1.22 times this
+    level's, so a promotion's low case, the next level's 0.80 compa-ratio, already lands above
+    this level's 0.95 lift ceiling. A plan with both levers pays the promotion and drops that
+    employee's lift. The credit is what the lift would have cost those employees, base and bonus.
+    """
+    both = [r for r in cliff if _base_adjustment([r], [r])["candidates"] and _level_review([r])["costed"]]
+    return {
+        "employees": len(both),
+        "credit_usd": float(_base_adjustment(both, both)["annual_cost_usd"]) if both else 0.0,
+        "rule": ("An employee costed for a base lift and a promotion counts once: the plan pays the "
+                 "promotion and drops the lift."),
+    }
+
+
 def _covered(levers: list[str], departures: dict[str, Any], declined: dict[str, Any]) -> tuple[int, int]:
     dep_drivers = {d for key in levers if LEVERS[key]["answers"] == "departures" for d in LEVERS[key]["addresses"]}
     dec_drivers = {d for key in levers if LEVERS[key]["answers"] == "declined_offers" for d in LEVERS[key]["addresses"]}
@@ -254,6 +272,7 @@ def assess_intervention_fit(vp_org_code: str, job_family: str, db_path: Path = D
     branch_cost = {b["branch_id"]: float(b["estimated_proactive_cost_usd"]) for b in grants["strategic_branches"]}
     base = _base_adjustment(roster, cliff)
     level = _level_review(cliff)
+    joint = joint_pricing(cliff)
     costs = {
         "retention_grant": {"one_time_grant_cost_usd": branch_cost["Branch_B_Full_Proactive_Cliff_Coverage"],
                             "candidates_by_tier": grants["eligible_cliff_candidates_by_tier"],
@@ -281,14 +300,16 @@ def assess_intervention_fit(vp_org_code: str, job_family: str, db_path: Path = D
     for key, spec in OPTIONS.items():
         chosen = list(spec["levers"]) + (list(spec["adds_on_mismatch"]) if mismatch else [])
         dep, dec = _covered(chosen, departures, declined)
+        credit = joint["credit_usd"] if {"base_adjustment", "level_review"} <= set(chosen) else 0.0
         cost = branch_cost[spec["grant_branch"]]
         cost += base["annual_cost_usd"] if "base_adjustment" in chosen else 0
         cost += level["annual_cost_usd"] if "level_review" in chosen else 0
+        cost -= credit
         options.append({
             "option": key, "name": spec["name"], "levers": chosen,
             "departures_addressed": dep, "departures": n_dep,
             "declined_offers_addressed": dec, "declined_offers": declined["total"],
-            "first_year_cost_usd": cost, "remaining_budget_usd": remaining,
+            "first_year_cost_usd": cost, "joint_pricing_credit_usd": credit, "remaining_budget_usd": remaining,
             "fits_remaining_budget": cost <= remaining, "budget_gap_usd": max(0.0, cost - remaining),
             "partial_fit": n_dep > 0 and dep < POLICY["mismatch_share"] * n_dep,
         })
@@ -319,6 +340,7 @@ def assess_intervention_fit(vp_org_code: str, job_family: str, db_path: Path = D
             "compa_floor_breach": base["_floor_breaches"] > 0,
         },
         "options": options,
+        "joint_pricing": joint,
         "governance": {
             "compa_floor_breaches": base["_floor_breaches"],
             "compa_floor_fix_usd": base["_floor_fix"],
