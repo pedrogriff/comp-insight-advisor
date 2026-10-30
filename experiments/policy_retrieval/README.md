@@ -7,7 +7,8 @@ All data is synthetic. Apex Cloud & AI Corp doesn't exist.
 ## What's here
 
 - `nomic-embed-text.json` holds the similarity score that `nomic-embed-text`, run locally through Ollama on Oct 24, 2026, gave each of 48 queries against each of the playbook's 38 rule chunks. The queries are the 28 test questions in `data/synthetic/policy_retrieval_cases.json`, the 3 demo questions in `src/retrieval/policy_search.py` and the 17 queries the agent sends for the three cohorts in `COHORTS`.
-- The file also stores the chunk IDs and a hash of the chunk texts. If the playbook changes, the replay stops with an error, and `tests/test_policy_retrieval.py` fails until someone saves the scores again with the model.
+- `nomic-embed-text-router.json` holds the scores the same model gave on Oct 30, 2026, on the personal machine, to 108 queries against the same 38 chunks: the queries above plus every query the cross-lever router and its baselines send for the 28 test questions and the 12 comparison questions in `data/synthetic/cross_lever_cases.json`.
+- Each file also stores the chunk IDs and a hash of the chunk texts. If the playbook changes, the replay stops with an error, and `tests/test_policy_retrieval.py` fails until someone saves the scores again with the model.
 
 ## Run it
 
@@ -44,9 +45,24 @@ A replay uses the 0.60 threshold in `MIN_SIMILARITY` in `src/retrieval/embedding
 
 ## The cross-lever router
 
-The file predates `src/retrieval/cross_lever.py`, so it holds no scores for the queries the router sends, and `python3 -m src.retrieval.cross_lever --evaluate --embedder saved:...` stops with a message that names the first missing query. Since Oct 30, `--save` also writes those queries. To score the router with the model, save to a new file and keep this one, because `NomicRunTest` pins its exact scores:
+`nomic-embed-text-router.json` replays the router without Ollama, in hybrid mode:
 
 ```bash
-python3 -m src.retrieval.policy_search --embedder ollama:nomic-embed-text --save experiments/policy_retrieval/nomic-embed-text-router.json
 python3 -m src.retrieval.cross_lever --evaluate --embedder saved:experiments/policy_retrieval/nomic-embed-text-router.json
 ```
+
+| Search | Dev sides answered | Dev questions fully right | Held-out sides answered | Held-out empty sides kept empty | Held-out questions fully right |
+| :--- | ---: | ---: | ---: | ---: | ---: |
+| Keyword, one query, no filter | 3 of 9 | 1 of 5 | 0 of 11 | 3 of 3 | 1 of 7 |
+| Keyword, one query per side | 8 of 9 | 4 of 5 | 5 of 11 | 3 of 3 | 3 of 7 |
+| Hybrid, one query, no filter | 5 of 9 | 0 of 5 | 5 of 11 | 2 of 3 | 2 of 7 |
+| Hybrid, one query per side | 9 of 9 | 5 of 5 | 9 of 11 | 1 of 3 | 4 of 7 |
+
+The 2 empty dev sides stay empty in every keyword run and with hybrid one query per side. A single hybrid query keeps 1 of them, with or without the first side's filter.
+
+- The model finds sides that keyword search misses on paraphrases. Held-out sides answered go from 5 of 11 to 9 of 11.
+- It also fills both sides of XH6, "How do stock option repricing rules differ for new hires and current staff?", which the playbook doesn't cover: `2.1:thresholds` for new hires, and `3:tier-1`, `3:tier-2` and `4:stale-promotion` for current staff. Keyword search leaves both sides empty. The writer would get clauses that don't answer the question, so this mode needs a relevance floor per side before the agent uses it.
+- Routing the 28 single questions costs two dev hits in hybrid mode. P12, "What is the biggest stock award allowed for a top performer facing a competitor raid?", becomes a split that finds nothing, and P16, "Should people who left and candidates who said no be counted together?", becomes a new-hire question and misses `6:p1`. Held-out H3, "Who signs off on the largest retention awards?", gains `3:tier-3`. In keyword mode routing changes no hit.
+- The held-out questions have now been scored once in each mode. A fix tuned on the dev questions has to say so when it reports held-out results again.
+
+`NomicRouterRunTest` in `tests/test_cross_lever.py` replays this file and checks these results.
