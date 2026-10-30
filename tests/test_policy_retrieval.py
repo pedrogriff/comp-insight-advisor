@@ -15,6 +15,7 @@ from src.retrieval.embeddings import HashingEmbedder, make_embedder  # noqa: E40
 from src.retrieval.grounded_options import ground_options  # noqa: E402
 from src.retrieval.policy_search import (COHORTS, PLAYBOOK_PATH, PolicyRetriever, check_limits, covers,  # noqa: E402
                                          evaluate, load_policy_chunks, save_scores, verify_rule)
+from src.tools.intervention_fit import assess_intervention_fit  # noqa: E402
 from src.tools.interview_search import NoteIndex, load_notes  # noqa: E402
 
 SAVED_NOMIC = PROJECT_ROOT / "experiments" / "policy_retrieval" / "nomic-embed-text.json"
@@ -137,7 +138,10 @@ class GroundedOptionsTest(unittest.TestCase):
         self.assertEqual(self.without["unsupported"], 5)
         self.assertEqual(self.without["exit_notes"], [])
         self.assertTrue(all(not hits for hits in self.without["clauses"].values()))
-        self.assertEqual([o["first_year_cost_usd"] for o in self.with_rag["options"]], [1524000.0, 2648000.0, 4006600.0])
+        # Retrieval passes the driver-fit costs through unchanged. test_intervention_fit and test_joint_pricing pin them.
+        fit = assess_intervention_fit("VP_CLOUD_AI", "RESEARCH_SCI")
+        self.assertEqual([o["first_year_cost_usd"] for o in self.with_rag["options"]],
+                         [o["first_year_cost_usd"] for o in fit["options"]])
 
     def test_a_changed_playbook_stops_the_stale_limit(self):
         text = PLAYBOOK_PATH.read_text(encoding="utf-8")
