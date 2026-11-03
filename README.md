@@ -79,8 +79,8 @@ The generator is deterministic. A rerun writes the same three CSV files byte for
 | :--- | :--- | :--- | :--- |
 | 1 | Oct 13 | [Build log 1/7](https://www.linkedin.com/feed/update/urn:li:activity:7515786546697117696/) | An agent that isn't allowed to do math |
 | 2 | Oct 20 | [Build log 2/7](https://www.linkedin.com/feed/update/urn:li:activity:7518326192945430531/) | 500 rows vs. 5 numbers |
-| 3 | Oct 27 | | Retrieval found the old policy |
-| 4 | Nov 3 | | Two of my three plans were the same plan |
+| 3 | Oct 27 | [Build log 3/7](https://www.linkedin.com/posts/pedrogriff_agenticai-rag-compensation-share-7520915421089263616-xyO_) | The right rule for the wrong people |
+| 4 | Nov 3 | [Build log 4/7]((https://www.linkedin.com/feed/update/urn:li:activity:7523451374332858368/)) | Two of my three plans were the same plan |
 | 5 | Nov 10 | | One agent vs. three, measured |
 | 6 | Nov 17 | | The checker caught an invented number |
 | 7 | Nov 24 | | Demo and scorecard |
