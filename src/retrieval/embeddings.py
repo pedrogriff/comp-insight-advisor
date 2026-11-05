@@ -95,6 +95,10 @@ class HTTPEmbedder:
         if provider not in PROVIDERS:
             raise ValueError(f"Unknown provider {provider!r}. Use one of {sorted(PROVIDERS)}.")
         default_url, key_var, self.wire = PROVIDERS[provider]
+        if base_url is None and provider == "ollama":
+            env_url = os.environ.get("OLLAMA_BASE_URL") or os.environ.get("OLLAMA_HOST")
+            if env_url:
+                base_url = env_url if env_url.startswith(("http://", "https://")) else f"http://{env_url}"
         self.provider, self.model = provider, model
         self.base_url = (base_url or default_url).rstrip("/") + "/"
         self.api_key = api_key if api_key is not None else (os.environ.get(key_var, "") if key_var else "")
@@ -105,9 +109,9 @@ class HTTPEmbedder:
         self.query_prefix, self.document_prefix = PREFIXES.get(family, ("", ""))
         self.min_similarity = MIN_SIMILARITY.get(family)
         self.name = f"{provider}:{model}"
-        host = urllib.parse.urlsplit(self.base_url).hostname
-        # A local server, such as Ollama, is reached directly even when a proxy is configured.
-        local = host in ("localhost", "127.0.0.1", "::1")
+        host = urllib.parse.urlsplit(self.base_url).hostname or ""
+        # A local or homelab server, such as Ollama, is reached directly even when a proxy is configured.
+        local = host in ("localhost", "127.0.0.1", "::1") or host.startswith("10.0.0.") or host.endswith((".nip.io", ".local"))
         self._open = urllib.request.build_opener(urllib.request.ProxyHandler({})).open if local else urllib.request.urlopen
 
     def _post(self, path: str, body: dict) -> dict:
