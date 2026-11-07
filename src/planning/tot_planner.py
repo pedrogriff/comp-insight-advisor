@@ -146,6 +146,7 @@ def search(facts: dict[str, Any], width: int = BEAM_WIDTH, max_evaluations: int 
     """
     root = {**evaluate(facts, ()), "depth": 0, "parent": None}
     frontier, seen, kept, pruned, evaluations = [root], {()}, [], [], 0
+    kept_by_depth: dict[int, int] = {}
     for depth in range(1, MAX_DEPTH + 1):
         children = []
         for node in frontier:
@@ -183,7 +184,10 @@ def search(facts: dict[str, Any], width: int = BEAM_WIDTH, max_evaluations: int 
                                "reason": f"same coverage, cost and sign-offs as {twin['signature']}"})
             elif len(frontier) < width:
                 frontier.append(child)
-    return {"facts": facts, "nodes": kept, "pruned": pruned, "evaluations": evaluations, "width": width}
+        if frontier:
+            kept_by_depth[depth] = len(frontier)
+    return {"facts": facts, "nodes": kept, "pruned": pruned, "evaluations": evaluations, "width": width,
+            "kept_by_depth": kept_by_depth, "model_calls": sum(kept_by_depth.values())}
 
 
 def choose_options(tree: dict[str, Any]) -> list[dict[str, Any]]:
