@@ -51,7 +51,7 @@ Updated every Tuesday.
 
 ## Run it
 
-The generator, the tools and the tests need Python 3.10 or newer and the standard library only. Later checkpoints add the packages in `requirements.txt`.
+The generator, the tools and the tests need Python 3.12 or newer and the standard library only. Later checkpoints add the packages in `requirements.txt`.
 
 Run these from the repo root:
 
@@ -89,7 +89,7 @@ The generator is deterministic. A rerun writes the same three CSV files byte for
 | 2 | Oct 20 | [Build log 2/7](https://www.linkedin.com/feed/update/urn:li:activity:7518326192945430531/) | 500 rows vs. 5 numbers |
 | 3 | Oct 27 | [Build log 3/7](https://www.linkedin.com/posts/pedrogriff_agenticai-rag-compensation-share-7520915421089263616-xyO_) | The right rule for the wrong people |
 | 4 | Nov 3 | [Build log 4/7](https://www.linkedin.com/feed/update/urn:li:activity:7523451374332858368/) | Two of my three plans were the same plan |
-| 5 | Nov 10 | | One agent vs. three, measured |
+| 5 | Nov 10 | [Build log 5/7](https://www.linkedin.com/feed/update/urn:li:activity:7525990176800616448/) | One agent vs. three, measured |
 | 6 | Nov 17 | | The checker caught an invented number |
 | 7 | Nov 24 | | Demo and scorecard |
 
