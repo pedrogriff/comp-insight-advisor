@@ -1,0 +1,6 @@
+{
+  "about": "SHA-256 of each file the advisor treats as ground truth. Update with python3 -m src.guardrails.integrity --update after a reviewed change.",
+  "files": {
+    "docs/policies/compensation_governance_playbook.md": "13629cfb8fed43d13c1c461a6d070f03d563e2200407645690dfa12bd5ab1fa8"
+  }
+}
