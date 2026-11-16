@@ -42,7 +42,11 @@ import sqlite3
 import sys
 from typing import Any
 
-from src.tools.deterministic_analytics import DEFAULT_DB_PATH, simulate_proactive_retention_scenarios
+from src.tools.deterministic_analytics import (
+    DEFAULT_DB_PATH,
+    connect_readonly,
+    simulate_proactive_retention_scenarios,
+)
 from src.tools.intervention_fit import (DEPARTURE_EVENT, HIRING_EVENT, LEVERS, POLICY, ROSTER_COLUMNS,
                                         _base_adjustment, _driver_counts, _level_review, assess_intervention_fit,
                                         joint_pricing)
@@ -63,7 +67,7 @@ COHORTS = [("VP_CLOUD_AI", "RESEARCH_SCI"), ("VP_CLOUD_AI", "AI_ML_ENG"), ("VP_S
 
 def cohort_facts(vp_org_code: str, job_family: str, db_path: Path = DEFAULT_DB_PATH) -> dict[str, Any]:
     """Everything the critic needs for one cohort, from the same rules as assess_intervention_fit."""
-    with closing(sqlite3.connect(db_path)) as conn:
+    with closing(connect_readonly(db_path)) as conn:
         conn.row_factory = sqlite3.Row
         departures = _driver_counts(conn, vp_org_code, job_family, DEPARTURE_EVENT)
         declined = _driver_counts(conn, vp_org_code, job_family, HIRING_EVENT)
@@ -259,7 +263,7 @@ def compare(cohorts: list[tuple[str, str]] = COHORTS, db_path: Path = DEFAULT_DB
 def template_audit(db_path: Path = DEFAULT_DB_PATH) -> list[dict[str, Any]]:
     """For every cohort with departures: does a template option claim departures at $0, and does the cohort pass the evidence check?"""
     from src.tools.evidence_check import assess_retention_evidence  # here, so the planner imports stay light
-    with closing(sqlite3.connect(db_path)) as conn:
+    with closing(connect_readonly(db_path)) as conn:
         pairs = conn.execute("SELECT DISTINCT vp_org_code, job_family FROM reactive_offers_counters"
                              " WHERE event_type = ? AND outcome = 'Declined_Lost' ORDER BY 1, 2", (DEPARTURE_EVENT,)).fetchall()
     rows = []
