@@ -34,7 +34,7 @@ import sqlite3
 import statistics
 from typing import Any
 
-from src.tools.deterministic_analytics import DEFAULT_DB_PATH
+from src.tools.deterministic_analytics import DEFAULT_DB_PATH, connect_readonly
 
 THRESHOLDS: dict[str, float] = {
     # Playbook Sections 2.2 and 3: a YoY Intended Cashflow drop of 15 percent
@@ -262,7 +262,7 @@ def assess_retention_evidence(
     params = (job_family, vp_org_code, vp_org_code)
     cliff = THRESHOLDS["cliff_drop_pct"]
 
-    with closing(sqlite3.connect(db_path)) as conn:
+    with closing(connect_readonly(db_path)) as conn:
         conn.row_factory = sqlite3.Row
         roster = dict(
             conn.execute(

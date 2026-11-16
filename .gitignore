@@ -17,5 +17,8 @@ vector_index/
 .pytest_cache/
 .DS_Store
 
+# Approval queue, checkpoints and audit log written at run time
+runtime/
+
 # Internal specifications
 AGENT_HANDOVER_SPEC.md

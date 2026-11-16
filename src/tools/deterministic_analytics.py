@@ -20,11 +20,20 @@ DEFAULT_DB_PATH = (
 TIER0_RATINGS = ("rating_1", "rating_2")
 
 
+def connect_readonly(db_path: Path | str) -> sqlite3.Connection:
+    """Opens the roster database read-only.
+
+    Every tool query is a SELECT, so no agent can change pay data through a tool,
+    and a missing file raises an error instead of leaving an empty database behind.
+    """
+    return sqlite3.connect(f"{Path(db_path).resolve().as_uri()}?mode=ro", uri=True)
+
+
 def analyze_org_cliff_and_equity_health(
     vp_org_code: str, db_path: Path = DEFAULT_DB_PATH
 ) -> dict[str, Any]:
     """Computes 2027 cashflow cliff cohorts, peer percentiles, and governance flags."""
-    with closing(sqlite3.connect(db_path)) as conn:
+    with closing(connect_readonly(db_path)) as conn:
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
 
@@ -103,7 +112,7 @@ def analyze_reactive_offers_and_counters(
     vp_org_code: str, db_path: Path = DEFAULT_DB_PATH
 ) -> dict[str, Any]:
     """Analyzes new-hire offer acceptance rates, counter-offers, and competitor premiums."""
-    with closing(sqlite3.connect(db_path)) as conn:
+    with closing(connect_readonly(db_path)) as conn:
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
 
@@ -172,7 +181,7 @@ def simulate_proactive_retention_scenarios(
     group, and every candidate faces a drop of 15 percent or more, so Tier 0's third condition,
     a drop under 10 percent, cannot apply. Held candidates are counted in held_by_tier0.
     """
-    with closing(sqlite3.connect(db_path)) as conn:
+    with closing(connect_readonly(db_path)) as conn:
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
 

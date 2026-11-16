@@ -1,8 +1,10 @@
-pandas>=2.2.0
-numpy>=1.26.0
-chromadb>=0.5.0
-openai>=1.50.0
-pydantic>=2.9.0
-gradio>=5.0.0
-python-dotenv>=1.0.0
+# Runtime UI and multi-agent graph dependencies
+gradio>=5.0.0,<6.0.0
+langgraph>=1.0.0,<2.0.0
+langgraph-checkpoint-sqlite>=3.0.0,<4.0.0
+
+# Optional test runner (standard-library `python3 -m unittest discover -s tests` runs with zero packages)
 pytest>=8.0.0
+
+# Optional PDF rendering on developer machines (run `playwright install chromium` once after install):
+# playwright>=1.48.0
