@@ -14,7 +14,6 @@ import json
 import operator
 from pathlib import Path
 import re
-import sqlite3
 from typing import Any, Callable
 
 from src.memory.partner_memory import PartnerMemory
@@ -27,6 +26,7 @@ from src.retrieval.policy_search import PLAYBOOK_PATH, PolicyRetriever
 from src.tools.deterministic_analytics import (
     analyze_org_cliff_and_equity_health,
     analyze_reactive_offers_and_counters,
+    connect_readonly,
 )
 from src.tools.evidence_check import assess_retention_evidence
 from src.tools.intervention_fit import assess_intervention_fit
@@ -70,6 +70,10 @@ class ToolAccessError(PermissionError):
 
 class DuplicateToolCallError(RuntimeError):
     """Raised when an agent repeats an identical tool call in the same turn."""
+
+
+class OrgAccessError(PermissionError):
+    """Raised when a tool call names a VP org outside the requesting partner's scope."""
 
 
 @dataclass(frozen=True)
@@ -147,6 +151,8 @@ class SquadState:
     vp_org_code: str | None = None
     job_family: str | None = None
     partner_id: str = "HRBP_DEFAULT"
+    # VP orgs the requesting partner may see. The session sets it, never a model. None means no limit.
+    allowed_orgs: tuple[str, ...] | None = None
     plan: InvestigationPlan | None = None
     active_preferences: list[dict[str, Any]] = field(default_factory=list)
     pending_preferences: list[dict[str, Any]] = field(default_factory=list)
@@ -160,6 +166,8 @@ class SquadState:
     max_revisions: int = MAX_REVISIONS
     status: str = "IN_PROGRESS"
     final_output: str = ""
+    # The human decision recorded at the approval gate, when one was needed.
+    approval: dict[str, Any] | None = None
     errors: list[str] = field(default_factory=list)
     messages: list[str] = field(default_factory=list)
     tool_calls: list[dict[str, Any]] = field(default_factory=list)
@@ -228,10 +236,12 @@ class ScopedToolExecutor:
         agent_name: str,
         tools: dict[str, Callable[..., Any]],
         allowed_tools: tuple[str, ...] | None = None,
+        allowed_orgs: tuple[str, ...] | None = None,
     ) -> None:
         self.agent_name = agent_name
         self._tools = tools
         self.allowed_tools = allowed_tools if allowed_tools is not None else AGENT_TOOL_SCOPES[agent_name]
+        self.allowed_orgs = allowed_orgs
         self._seen_calls: set[tuple[str, str]] = set()
         self.call_log: list[dict[str, Any]] = []
 
@@ -242,6 +252,15 @@ class ScopedToolExecutor:
             )
         if tool_name not in self._tools:
             raise ValueError(f"Unknown tool: {tool_name}")
+        if self.allowed_orgs is not None:
+            named_orgs = [kwargs["vp_org_code"]] if kwargs.get("vp_org_code") else []
+            named_orgs += [scope[0] for scope in kwargs.get("cohorts") or []]
+            for org in named_orgs:
+                if org not in self.allowed_orgs:
+                    raise OrgAccessError(
+                        f"{self.agent_name} called {tool_name!r} for {org}, outside the partner's orgs "
+                        f"{list(self.allowed_orgs)}"
+                    )
         safe_args = {
             k: (f"<SquadState scope={v.vp_org_code} rev={v.revisions}>" if isinstance(v, SquadState) else v)
             for k, v in kwargs.items()
@@ -259,7 +278,7 @@ class ScopedToolExecutor:
 
 
 def _list_org_cohorts(vp_org_code: str, db_path: Path) -> tuple[list[str], float]:
-    with closing(sqlite3.connect(db_path)) as conn:
+    with closing(connect_readonly(db_path)) as conn:
         families = [
             r[0]
             for r in conn.execute(
@@ -559,7 +578,7 @@ def deterministic_verify_brief(
         checked_citations += 1
         if cid not in available_clauses:
             issues.append(f"unverified_citation: clause {cid!r} was not retrieved in grounded_by_cohort")
-    if not draft.cited_clauses:
+    if not draft.cited_clauses and draft.option_lines:
         issues.append("missing_citations: retention brief must cite retrieved playbook clauses")
 
     convergent_evidence = [
@@ -595,6 +614,23 @@ def deterministic_verify_brief(
     )
     for opt in options_source:
         expected_signoffs.update(opt.get("sign_offs", []))
+
+    evaluated_triples = {
+        (int(o["departures_addressed"]), int(o["declined_addressed"]), round(float(o["first_year_cost_usd"]), 2))
+        for o in options_source
+    }
+    for line in draft.option_lines:
+        dep = re.search(r"\b([0-9]+)\s+of\s+[0-9]+\s+departures\b", line, re.I)
+        dec = re.search(r"\b([0-9]+)\s+of\s+[0-9]+\s+declined offers\b", line, re.I)
+        cost = MONEY_RE.search(line)
+        if not (dep and dec and cost):
+            continue
+        triple = (int(dep.group(1)), int(dec.group(1)), round(float(cost.group(1).replace(",", "")), 2))
+        if triple not in evaluated_triples:
+            issues.append(
+                f"option_figure_mismatch: '{line.split(':', 1)[0]}' pairs {triple[0]} departures, {triple[1]} "
+                f"declined offers and ${cost.group(1)}, which no single evaluated option has"
+            )
     missing_signoffs = sorted(expected_signoffs - set(draft.sign_offs))
     if missing_signoffs:
         issues.append(f"missing_sign_offs: brief omitted required sign-offs {missing_signoffs}")
