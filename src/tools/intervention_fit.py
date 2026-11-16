@@ -33,7 +33,12 @@ from pathlib import Path
 import sqlite3
 from typing import Any
 
-from src.tools.deterministic_analytics import DEFAULT_DB_PATH, TIER0_RATINGS, simulate_proactive_retention_scenarios
+from src.tools.deterministic_analytics import (
+    DEFAULT_DB_PATH,
+    TIER0_RATINGS,
+    connect_readonly,
+    simulate_proactive_retention_scenarios,
+)
 from src.tools.evidence_check import wilson_interval
 
 DEPARTURE_EVENT = "Reactive_Counter_Offer"
@@ -254,7 +259,7 @@ def _covered(levers: list[str], departures: dict[str, Any], declined: dict[str, 
 
 def assess_intervention_fit(vp_org_code: str, job_family: str, db_path: Path = DEFAULT_DB_PATH) -> dict[str, Any]:
     """Separates loss drivers, matches levers to them, and costs the three brief options."""
-    with closing(sqlite3.connect(db_path)) as conn:
+    with closing(connect_readonly(db_path)) as conn:
         conn.row_factory = sqlite3.Row
         departures = _driver_counts(conn, vp_org_code, job_family, DEPARTURE_EVENT)
         declined = _driver_counts(conn, vp_org_code, job_family, HIRING_EVENT)

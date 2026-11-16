@@ -239,7 +239,8 @@ def evaluate(notes_path: Path = NOTES_PATH, cases_path: Path = CASES_PATH, k: in
 
 
 def _print_report(report: dict[str, Any]) -> None:
-    print(f"case  relevant | {' | '.join(f'{n}: P@{report['k']} R@10 themes dups' for n in CONFIGS)}")
+    k_val = report["k"]
+    print(f"case  relevant | {' | '.join(f'{n}: P@{k_val} R@10 themes dups' for n in CONFIGS)}")
     for row in report["cases"]:
         cells = []
         for name in CONFIGS:
