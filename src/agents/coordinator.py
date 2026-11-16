@@ -47,6 +47,7 @@ from src.agents.state import (
     InvestigationPlan,
     MAX_RETRIEVAL_ATTEMPTS,
     MAX_REVISIONS,
+    OrgAccessError,
     ReviewVerdict,
     ScopedToolExecutor,
     SquadState,
@@ -75,6 +76,7 @@ __all__ = [
     "MAX_RETRIEVAL_ATTEMPTS",
     "MAX_REVISIONS",
     "MultiAgentCoordinator",
+    "OrgAccessError",
     "ReviewVerdict",
     "ScopedToolExecutor",
     "SquadState",
@@ -84,6 +86,7 @@ __all__ = [
     "build_tool_map",
     "compare_single_vs_squad",
     "deterministic_verify_brief",
+    "is_policy_comparison",
     "merge_parallel_updates",
     "run_single_agent_baseline",
 ]
@@ -199,8 +202,9 @@ def _default_writer(state: SquadState) -> ExecutiveBrief:
         front_finding = next((f for f in state.findings if f.kind == "cohort_front"), None)
         if front_finding is None:
             summary = (
-                f"No cohort in {org_code} passed the convergent internal-cliff and market-loss gate. "
-                f"Budget remains ${plan.effective_budget_usd:,.0f}."
+                f"No cohort in {org_code} passed the convergent internal-cliff and market-loss gate"
+                f"{' (' + ', '.join(non_convergent) + ')' if non_convergent else ''}, so this brief costs no "
+                f"retention spend. Budget remains ${plan.effective_budget_usd:,.0f}."
             )
         else:
             p = front_finding.payload
@@ -274,6 +278,14 @@ def _default_writer(state: SquadState) -> ExecutiveBrief:
     )
 
 
+def is_policy_comparison(question: str) -> bool:
+    """True when a request reads as a playbook comparison across two populations or levers."""
+    q_plan = plan_question(question)
+    return len(q_plan.get("sides", [])) >= 2 and any(
+        w in question.lower() for w in ("compare", "versus", "vs", "differ", "policy", "cap")
+    )
+
+
 class MultiAgentCoordinator:
     """Five-node StateGraph-equivalent coordinator for compensation investigations."""
 
@@ -300,17 +312,13 @@ class MultiAgentCoordinator:
             base_tools.update(tool_overrides)
         self._tools = base_tools
 
-    def make_executor(self, agent_name: str) -> ScopedToolExecutor:
-        return ScopedToolExecutor(agent_name, self._tools, AGENT_TOOL_SCOPES[agent_name])
+    def make_executor(self, agent_name: str, state: SquadState | None = None) -> ScopedToolExecutor:
+        allowed_orgs = state.allowed_orgs if state is not None else None
+        return ScopedToolExecutor(agent_name, self._tools, AGENT_TOOL_SCOPES[agent_name], allowed_orgs)
 
     def supervisor_node(self, state: SquadState) -> SquadState:
-        executor = self.make_executor("supervisor")
-        q_plan = plan_question(state.question)
-        is_policy_only = (
-            state.vp_org_code is None
-            and len(q_plan.get("sides", [])) >= 2
-            and any(w in state.question.lower() for w in ("compare", "versus", "vs", "differ", "policy", "cap"))
-        )
+        executor = self.make_executor("supervisor", state)
+        is_policy_only = state.vp_org_code is None and is_policy_comparison(state.question)
         if is_policy_only:
             state.plan = InvestigationPlan(
                 mode="cross_lever_policy",
@@ -368,7 +376,7 @@ class MultiAgentCoordinator:
         return ["executive_synthesizer"]
 
     def proactive_strategist_node(self, state: SquadState) -> dict[str, Any]:
-        executor = self.make_executor("proactive_strategist")
+        executor = self.make_executor("proactive_strategist", state)
         findings: list[Finding] = []
         errors: list[str] = []
         messages: list[str] = []
@@ -429,7 +437,7 @@ class MultiAgentCoordinator:
         }
 
     def reactive_analyst_node(self, state: SquadState) -> dict[str, Any]:
-        executor = self.make_executor("reactive_analyst")
+        executor = self.make_executor("reactive_analyst", state)
         findings: list[Finding] = []
         errors: list[str] = []
         messages: list[str] = []
@@ -485,7 +493,7 @@ class MultiAgentCoordinator:
     def executive_synthesizer_node(self, state: SquadState) -> SquadState:
         assert state.plan is not None
         if state.revisions == 0:
-            executor = self.make_executor("executive_synthesizer")
+            executor = self.make_executor("executive_synthesizer", state)
             if state.plan.mode == "cross_lever_policy":
                 state.cross_lever_result = executor.call(
                     "compare_cross_lever_policies", question=state.question
@@ -501,7 +509,7 @@ class MultiAgentCoordinator:
                     f for f in state.findings if f.kind != "cohort_front" or f.scope in convergent_scopes
                 ]
                 if len(convergent) >= 2:
-                    sup_exec = self.make_executor("supervisor")
+                    sup_exec = self.make_executor("supervisor", state)
                     state.org_composition = sup_exec.call(
                         "compose_org_options",
                         cohorts=convergent,
@@ -523,7 +531,7 @@ class MultiAgentCoordinator:
         return state
 
     def governance_reviewer_node(self, state: SquadState) -> SquadState:
-        executor = self.make_executor("governance_reviewer")
+        executor = self.make_executor("governance_reviewer", state)
         verdict = executor.call("verify_brief", state=state)
         if self.critic_fn is not None:
             verdict = self.critic_fn(state, verdict)
@@ -578,6 +586,25 @@ class MultiAgentCoordinator:
         state.messages.append("escalate_unverified: capped review loop and held brief for human review")
         return state
 
+    def initial_state(
+        self,
+        question: str,
+        vp_org_code: str | None = None,
+        job_family: str | None = None,
+        partner_id: str = "HRBP_DEFAULT",
+        max_revisions: int = MAX_REVISIONS,
+        allowed_orgs: tuple[str, ...] | None = None,
+    ) -> SquadState:
+        """Builds the state a run starts from. Both graph engines begin here."""
+        return SquadState(
+            question=question,
+            vp_org_code=vp_org_code,
+            job_family=job_family,
+            partner_id=partner_id,
+            allowed_orgs=tuple(allowed_orgs) if allowed_orgs is not None else None,
+            max_revisions=max_revisions,
+        )
+
     def run(
         self,
         question: str,
@@ -586,14 +613,9 @@ class MultiAgentCoordinator:
         partner_id: str = "HRBP_DEFAULT",
         max_revisions: int = MAX_REVISIONS,
         thread_id: str = "default-thread",
+        allowed_orgs: tuple[str, ...] | None = None,
     ) -> SquadState:
-        state = SquadState(
-            question=question,
-            vp_org_code=vp_org_code,
-            job_family=job_family,
-            partner_id=partner_id,
-            max_revisions=max_revisions,
-        )
+        state = self.initial_state(question, vp_org_code, job_family, partner_id, max_revisions, allowed_orgs)
         state = self.supervisor_node(state)
         self.checkpointer.save(thread_id, "supervisor", state)
 

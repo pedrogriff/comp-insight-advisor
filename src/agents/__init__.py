@@ -15,6 +15,7 @@ __all__ = [
     "MAX_RETRIEVAL_ATTEMPTS",
     "MAX_REVISIONS",
     "MultiAgentCoordinator",
+    "OrgAccessError",
     "ReviewVerdict",
     "ScopedToolExecutor",
     "SquadState",
