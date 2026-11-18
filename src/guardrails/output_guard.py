@@ -13,13 +13,18 @@ a brief may say at all:
   a brief states must equal the roster scan's numbers.
 - unsupported_certainty: a brief never promises an outcome, because the
   tools measure exposure and cost, not what a person will do.
+
+check_model_prose() is the check for text a language model wrote. The model
+gets a list of code-written facts and may rephrase them. It may not state a
+number those facts do not contain, and it may not say what check_text forbids.
+The model router runs it before a draft reaches the reviewer.
 """
 
 from __future__ import annotations
 
 import re
 
-from src.agents.state import SquadState
+from src.agents.state import SquadState, numbers_in
 
 EMPLOYEE_ID_RE = re.compile(r"\b(EMP\d{4,6}|OFFER\d{6,8})\b")
 DECISION_CLAIM_RE = re.compile(
@@ -76,6 +81,24 @@ def check_text(text: str, org_summary: dict | None = None) -> tuple[str, ...]:
                     f"{org_summary['manager_inversion_count']}"
                 )
     return tuple(issues)
+
+
+def check_model_prose(candidate: str, facts: str) -> tuple[str, ...]:
+    """Checks a paragraph a model wrote against the code-written facts it was given.
+
+    A number counts as new when no number of the same value appears in the facts, so the model can
+    reword a sentence but cannot round a figure, add one, or carry one over from another request.
+    A sentence copied word for word from the facts skips the wording checks, because a playbook
+    clause may say that offers "are approved within the Offers Desk". A reworded sentence does not.
+    """
+    known = numbers_in(facts)
+    issues = [
+        f"new_figure: the model wrote {token}, and the facts it was given hold no such number"
+        for value, token in numbers_in(candidate).items()
+        if value not in known
+    ]
+    own_words = [s for s in re.split(r"(?<=[.!?])\s+", candidate) if s.strip() and s.strip() not in facts]
+    return tuple(issues) + check_text(" ".join(own_words))
 
 
 def org_summary_from(state: SquadState) -> dict | None:

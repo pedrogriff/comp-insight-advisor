@@ -247,6 +247,14 @@ def _fault_wrong_side_clause(state: SquadState) -> SquadState | None:
     return _replace(state, claims=swapped, cited_clauses=(first.clause_id,))
 
 
+def _fault_invented_policy_figure(state: SquadState) -> SquadState | None:
+    """A policy answer is released without a person, so an invented figure in its prose must not pass."""
+    draft = state.draft
+    if not draft or draft.mode != "cross_lever_policy":
+        return None
+    return _replace(state, summary=draft.summary + " New hires may also receive up to $9,999,999.")
+
+
 FAULTS: dict[str, Callable[[SquadState], SquadState | None]] = {
     "wrong_currency": _fault_wrong_currency,
     "swapped_option_costs": _fault_swapped_option_costs,
@@ -262,6 +270,7 @@ FAULTS: dict[str, Callable[[SquadState], SquadState | None]] = {
     "promised_outcome": _summary_fault(" This plan guarantees retention."),
     "wrong_headcount": _fault_wrong_headcount,
     "wrong_side_clause": _fault_wrong_side_clause,
+    "invented_policy_figure": _fault_invented_policy_figure,
 }
 
 

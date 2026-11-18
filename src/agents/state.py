@@ -62,6 +62,17 @@ ALL_SPECIALIST_TOOLS: tuple[str, ...] = tuple(
 MONEY_RE = re.compile(r"\$([0-9][0-9,]*(?:\.[0-9]+)?)")
 PCT_RE = re.compile(r"([0-9]+(?:\.[0-9]+)?)%")
 RATIO_RE = re.compile(r"\b([0-9]+)\s+of\s+([0-9]+)\s+(departures|declined offers)\b", re.I)
+# Any number in running text: 1,995,600 reads as one number, and a digit glued to a name, as in Q1 or
+# rating_4, is not a number.
+NUMBER_RE = re.compile(r"(?<![A-Za-z_0-9.])(?:[0-9]{1,3}(?:,[0-9]{3})+|[0-9]+)(?:\.[0-9]+)?")
+
+
+def numbers_in(text: str) -> dict[float, str]:
+    """Every number a text states, keyed by value, so 1.20 matches 1.2. The value maps to the text as written."""
+    found: dict[float, str] = {}
+    for token in NUMBER_RE.findall(text):
+        found.setdefault(float(token.replace(",", "")), token)
+    return found
 
 
 class ToolAccessError(PermissionError):
@@ -529,6 +540,18 @@ def deterministic_verify_brief(
                     issues.append(f"cross_lever_violation: {prob}")
                 for ms in verdict["missing_sides"]:
                     issues.append(f"cross_lever_missing_side: {ms}")
+            # A policy answer is released without a person, so every number in its prose must come from
+            # a retrieved clause. The claims above are structured. This covers the sentences around them.
+            result = state.cross_lever_result
+            retrieved = [h for g in result.get("groups", []) for h in g.get("clauses", [])]
+            retrieved += list(result.get("shared", []))
+            known: dict[float, str] = {}
+            for hit in retrieved:
+                known.update(numbers_in(f"{hit['id']} {hit['text']}"))
+            for value, token in numbers_in("\n".join([draft.summary, *draft.option_lines])).items():
+                checked_numbers += 1
+                if value not in known:
+                    issues.append(f"unverified_policy_figure: {token} does not appear in any retrieved clause")
         if not draft.cited_clauses:
             issues.append("missing_citations: cross-lever brief cites zero playbook clause IDs")
         feedback = "; ".join(issues) if issues else "Approved: every side cites its own population rule."

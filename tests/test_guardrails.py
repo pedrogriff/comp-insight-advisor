@@ -542,7 +542,7 @@ class ScorecardTests(unittest.TestCase):
     def test_verifier_and_output_check(self) -> None:
         v = self.report["verifier"]
         self.assertEqual((v["runs"], v["verified_briefs"], v["clean_briefs_passed"]), (23, 23, 23))
-        self.assertEqual((v["faults_seeded"], v["faults_rejected"]), (160, 155))
+        self.assertEqual((v["faults_seeded"], v["faults_rejected"]), (163, 158))
         # The 5 misses are one blind spot: 87.5% exists in VP_ENT_APPS tool outputs, and the verifier checks
         # that a percentage exists, not which claim it belongs to.
         self.assertEqual(v["missed"], [f"invented_percentage on {name}" for name in (
@@ -550,6 +550,9 @@ class ScorecardTests(unittest.TestCase):
             "VP_ENT_APPS UX_DESIGN")])
         self.assertEqual(v["by_fault"]["swapped_option_costs"], "5 of 5")
         self.assertEqual(v["by_fault"]["employee_id_leak"], "23 of 23")
+        # Added on Nov 18 with the final evaluation: a policy answer goes out without a person, and until
+        # then the reviewer read its structured claims and skipped the numbers in its prose.
+        self.assertEqual(v["by_fault"]["invented_policy_figure"], "3 of 3")
 
     def test_routing_monitor_and_gate(self) -> None:
         r = self.report["routing"]

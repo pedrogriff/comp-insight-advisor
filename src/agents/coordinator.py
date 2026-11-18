@@ -110,11 +110,16 @@ def _default_writer(state: SquadState) -> ExecutiveBrief:
                 parts.append(f"{label} [{top['id']}]: {top['text']}")
             else:
                 parts.append(f"{label}: the compensation governance playbook states no rule for this side.")
+        # The lines below carry each side's clause, so the summary only introduces them. It holds no
+        # digit, because the reviewer checks every number in a policy answer against the retrieved clauses.
+        lead = "Each side below quotes the playbook clause that covers it."
+        if len(claims) < len(parts):
+            lead += " Where the playbook states no rule for a side, the answer says so."
         return ExecutiveBrief(
             mode="cross_lever_policy",
             scope="cross_lever",
             headline="Cross-lever policy comparison by population",
-            summary=" ".join(parts),
+            summary=lead,
             option_lines=tuple(parts),
             cited_clauses=tuple(dict.fromkeys(cited)),
             sign_offs=(),
