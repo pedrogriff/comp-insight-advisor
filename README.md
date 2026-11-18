@@ -123,7 +123,7 @@ The generator is deterministic. A rerun writes the same three CSV files byte for
 | 3 | Oct 27 | [Build log 3/7](https://www.linkedin.com/posts/pedrogriff_agenticai-rag-compensation-share-7520915421089263616-xyO_) | The right rule for the wrong people |
 | 4 | Nov 3 | [Build log 4/7](https://www.linkedin.com/feed/update/urn:li:activity:7523451374332858368/) | Two of my three plans were the same plan |
 | 5 | Nov 10 | [Build log 5/7](https://www.linkedin.com/feed/update/urn:li:activity:7525990176800616448/) | One agent vs. three, measured |
-| 6 | Nov 17 | | The checker caught an invented number |
+| 6 | Nov 17 | [Build log 6/7](https://www.linkedin.com/feed/update/urn:li:activity:7528650394504249344/) | 155 of 160 planted faults caught |
 | 7 | Nov 24 | | Demo and scorecard |
 
 ## License
