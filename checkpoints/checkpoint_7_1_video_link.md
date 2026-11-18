@@ -4,8 +4,6 @@ Pedro Griff Marcincowski. Strategic Talent and Compensation Insight Advisor.
 
 Video presentation, 8 to 10 minutes: https://youtu.be/VIDEO-LINK-PENDING
 
-Optional 90-second elevator pitch, not graded: https://youtu.be/PITCH-LINK-PENDING
-
 GitHub repository: https://github.com/pedrogriff/comp-insight-advisor
 
 Final report: attached to this submission as `checkpoint_7_1.pdf`.

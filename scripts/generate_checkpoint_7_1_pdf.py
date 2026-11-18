@@ -2,7 +2,7 @@
 
 checkpoints/checkpoint_7_1.pdf is the final capstone report. checkpoints/checkpoint_7_1_video_link.pdf
 is the one-page document with the video link and the summary. scripts/set_submission_links.py puts the
-video links into both before this script runs.
+video link into both before this script runs.
 """
 
 import asyncio
@@ -879,7 +879,6 @@ LINKS_HTML_TEMPLATE = """<!DOCTYPE html>
 
   <div class="links-box">
     <div><strong>Video presentation, 8 to 10 minutes:</strong> <span class="video-link"><a href="https://youtu.be/VIDEO-LINK-PENDING">https://youtu.be/VIDEO-LINK-PENDING</a></span></div>
-    <div><strong>Optional 90-second elevator pitch, not graded:</strong> <span class="pitch-link"><a href="https://youtu.be/PITCH-LINK-PENDING">https://youtu.be/PITCH-LINK-PENDING</a></span></div>
     <div><strong>GitHub repository:</strong> <a href="https://github.com/pedrogriff/comp-insight-advisor">https://github.com/pedrogriff/comp-insight-advisor</a></div>
     <div><strong>Final report:</strong> attached to this submission as <code>checkpoint_7_1.pdf</code>.</div>
   </div>

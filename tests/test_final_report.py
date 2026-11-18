@@ -98,11 +98,11 @@ class FinalReportTests(unittest.TestCase):
 
 
 class SubmissionLinkTests(unittest.TestCase):
-    def test_link_document_names_both_links_and_labels_the_pitch_optional(self) -> None:
+    def test_link_document_names_the_video_and_repo(self) -> None:
         text = LINKS.read_text(encoding="utf-8")
         self.assertIn(f"GitHub repository: {REPO_URL}", text)
         self.assertRegex(text, r"(?m)^Video presentation, 8 to 10 minutes: https://\S+$")
-        self.assertRegex(text, r"(?m)^Optional 90-second elevator pitch, not graded: .+$")
+        self.assertNotIn("pitch", text.lower())
         summary = text.split("## Summary of the presentation", 1)[1].strip().split("\n\n")[0]
         self.assertTrue(2 <= len(re.findall(r"[.!?](?:\s|$)", summary)) <= 3, summary)
         card = json.loads(scorecard.JSON_PATH.read_text(encoding="utf-8"))
@@ -113,7 +113,7 @@ class SubmissionLinkTests(unittest.TestCase):
         self.assertEqual(now["video"], now["video_in_link_document"])
 
     def test_setting_the_links_changes_all_three_files_and_nothing_else(self) -> None:
-        video, pitch = "https://youtu.be/dQw4w9WgXcQ", "https://www.loom.com/share/0123abcd"
+        video = "https://youtu.be/dQw4w9WgXcQ"
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             for path in (set_links.REPORT, set_links.LINKS, set_links.GENERATOR):
@@ -126,7 +126,7 @@ class SubmissionLinkTests(unittest.TestCase):
                 pending = set_links.current(root)["video"] == set_links.VIDEO_PENDING
                 self.assertEqual(set_links.main(["--check"], root), 1 if pending else 0)
                 self.assertEqual(set_links.main(["--video", "http://youtu.be/x y"], root), 2)
-                self.assertEqual(set_links.main(["--video", video, "--pitch", pitch], root), 0)
+                self.assertEqual(set_links.main(["--video", video], root), 0)
             self.assertIn("LINKS OK", out.getvalue())
             report, links, generator = (
                 (root / path).read_text(encoding="utf-8")
@@ -134,25 +134,22 @@ class SubmissionLinkTests(unittest.TestCase):
             )
             self.assertIn(f"\nVideo presentation: {video}\n", report)
             self.assertIn(f"\nVideo presentation, 8 to 10 minutes: {video}\n", links)
-            self.assertIn(f"\nOptional 90-second elevator pitch, not graded: {pitch}\n", links)
             self.assertEqual(generator.count(f'<span class="video-link"><a href="{video}">{video}</a></span>'), 2)
-            self.assertEqual(generator.count(f'<span class="pitch-link"><a href="{pitch}">{pitch}</a></span>'), 1)
             compile(generator, "generate_checkpoint_7_1_pdf.py", "exec")
             # Only the link lines changed: every other line of each file is as it was.
             for path, now in zip((set_links.REPORT, set_links.LINKS, set_links.GENERATOR), (report, links, generator)):
                 changed = [(a, b) for a, b in zip(before[path].splitlines(), now.splitlines()) if a != b]
                 self.assertEqual(len(before[path].splitlines()), len(now.splitlines()))
-                self.assertTrue(all("link" in a.lower() or "Video presentation" in a or "pitch" in a
+                self.assertTrue(all("link" in a.lower() or "Video presentation" in a
                                     for a, _ in changed), changed)
-                self.assertLessEqual(len(changed), 3)
+                self.assertLessEqual(len(changed), 2)
 
-            # A second run replaces the first links, and --no-pitch drops the pitch link.
+            # A second run replaces the first link.
             with contextlib.redirect_stdout(io.StringIO()):
-                self.assertEqual(set_links.main(["--video", "https://vimeo.com/123456789", "--no-pitch"], root), 0)
+                self.assertEqual(set_links.main(["--video", "https://vimeo.com/123456789"], root), 0)
             now = set_links.current(root)
-            self.assertEqual((now["video"], now["pitch"]), ("https://vimeo.com/123456789", set_links.NO_PITCH))
+            self.assertEqual(now["video"], "https://vimeo.com/123456789")
             generator = (root / set_links.GENERATOR).read_text(encoding="utf-8")
-            self.assertIn('<span class="pitch-link">not submitted</span>', generator)
             self.assertNotIn(video, generator)
 
     def test_generator_html_says_what_the_markdown_says(self) -> None:
@@ -190,8 +187,9 @@ class SubmissionLinkTests(unittest.TestCase):
         self.assertIn("".join(summary.replace("`", "").split()),
                       "".join(visible_words(consts["LINKS_HTML_TEMPLATE"])))
         now = set_links.current(ROOT)
-        for value in (now["video"], now["pitch"], REPO_URL):
+        for value in (now["video"], REPO_URL):
             self.assertIn(value, consts["LINKS_HTML_TEMPLATE"])
+        self.assertNotIn("pitch", consts["LINKS_HTML_TEMPLATE"].lower())
         self.assertEqual(consts["HTML_TEMPLATE"].count(now["video"]) >= 1, True)
 
 
