@@ -1,0 +1,609 @@
+{
+ "about": "What the verifier did with a model's summary on each request. All data is synthetic. Written by python3 -m src.evaluation.live_writer.",
+ "provider": "gemini",
+ "model": "gemini-3.5-flash-lite",
+ "engine": "stdlib",
+ "python": "3.13.5",
+ "recorded_on": "2026-11-18",
+ "repeats": 1,
+ "summary": {
+  "runs": 23,
+  "requests": 23,
+  "model_calls": 24,
+  "model_first_draft_verified": 22,
+  "model_redraft_verified": 1,
+  "code_written_after_rejection": 0,
+  "code_written_after_error": 0,
+  "not_verified": 0,
+  "same_end_as_code_written": 23,
+  "rejected_issue_kinds": {
+   "unsupported_certainty": 1
+  },
+  "median_ms": 1289.8,
+  "code_written_median_ms": 12.4
+ },
+ "runs": [
+  {
+   "request": "VP_CLOUD_AI",
+   "kind": "org_brief",
+   "repeat": 1,
+   "code_written": {
+    "status": "AWAITING_APPROVAL",
+    "route": "EXECUTIVE_SIGN_OFF"
+   },
+   "status": "AWAITING_APPROVAL",
+   "route": "EXECUTIVE_SIGN_OFF",
+   "same_end_as_code_written": true,
+   "verified": true,
+   "ended_with": "model_first_draft",
+   "model_calls": 1,
+   "errors": [],
+   "drafts": [
+    {
+     "by": "model_draft",
+     "text": "Across 500 employees encompassing 87 cliff cases, the organization carries $2,150,000 in effective proactive budget while pricing top cohort plans independently totals $3,246,000, which exceeds the budget by $1,096,000. Option 1 provides coverage for 7 of 11 departures and 16 of 16 declined offers for $1,995,600, whereas Option 3 covers 6 of 11 departures and 16 of 16 declined offers for $1,715,000, and Option 2 covers 11 of 11 departures and 16 of 16 declined offers for $4,770,000.",
+     "rejected_for": []
+    }
+   ],
+   "elapsed_ms": 1549.2,
+   "code_written_ms": 88.0
+  },
+  {
+   "request": "VP_CLOUD_AI AI_ML_ENG",
+   "kind": "cohort_brief",
+   "repeat": 1,
+   "code_written": {
+    "status": "AWAITING_APPROVAL",
+    "route": "EXECUTIVE_SIGN_OFF"
+   },
+   "status": "AWAITING_APPROVAL",
+   "route": "EXECUTIVE_SIGN_OFF",
+   "same_end_as_code_written": true,
+   "verified": true,
+   "ended_with": "model_first_draft",
+   "model_calls": 1,
+   "errors": [],
+   "drafts": [
+    {
+     "by": "model_draft",
+     "text": "The executive compensation brief for VP_CLOUD_AI AI_ML_ENG covers 87 cliff cases across 500 employees against an effective budget of $2,150,000. Option 1 addresses 7 of 7 departures and 10 of 10 declined offers for $2,009,200.",
+     "rejected_for": []
+    }
+   ],
+   "elapsed_ms": 1006.1,
+   "code_written_ms": 21.9
+  },
+  {
+   "request": "VP_CLOUD_AI PROD_MGMT",
+   "kind": "cohort_brief",
+   "repeat": 1,
+   "code_written": {
+    "status": "RELEASED",
+    "route": "AUTO_RELEASE"
+   },
+   "status": "RELEASED",
+   "route": "AUTO_RELEASE",
+   "same_end_as_code_written": true,
+   "verified": true,
+   "ended_with": "model_redraft",
+   "model_calls": 2,
+   "errors": [],
+   "drafts": [
+    {
+     "by": "model_draft_rejected",
+     "text": "Because no cohort in the VP_CLOUD_AI product management scope passed the convergent internal-cliff and market-loss gate among the 500 employees spanning 87 cliff cases, this retention brief costs no spend and leaves the $2,150,000 budget intact. No guaranteed outcomes or approvals are included in this evaluation.",
+     "rejected_for": [
+      "unsupported_certainty: 'guaranteed' promises an outcome no tool measures"
+     ]
+    },
+    {
+     "by": "model_draft",
+     "text": "For the VP_CLOUD_AI cohort containing 500 employees, 87 cliff cases were evaluated against market-loss gates yielding no signal for PROD_MGMT. Consequently, this brief costs no retention spend and the budget remains $2,150,000.",
+     "rejected_for": []
+    }
+   ],
+   "elapsed_ms": 3183.0,
+   "code_written_ms": 11.6
+  },
+  {
+   "request": "VP_CLOUD_AI RESEARCH_SCI",
+   "kind": "cohort_brief",
+   "repeat": 1,
+   "code_written": {
+    "status": "AWAITING_APPROVAL",
+    "route": "EXECUTIVE_SIGN_OFF"
+   },
+   "status": "AWAITING_APPROVAL",
+   "route": "EXECUTIVE_SIGN_OFF",
+   "same_end_as_code_written": true,
+   "verified": true,
+   "ended_with": "model_first_draft",
+   "model_calls": 1,
+   "errors": [],
+   "drafts": [
+    {
+     "by": "model_draft",
+     "text": "The executive compensation brief for VP_CLOUD_AI RESEARCH_SCI addresses 87 cliff cases across 500 employees against an effective budget of $2,150,000. Option 1 addresses 3 of 4 departures and 6 of 6 declined offers for $1,236,800, while Option 2 addresses 4 of 4 departures and 6 of 6 declined offers for $2,760,800, and Option 3 addresses 2 of 4 departures and 6 of 6 declined offers for $1,078,000.",
+     "rejected_for": []
+    }
+   ],
+   "elapsed_ms": 986.5,
+   "code_written_ms": 24.2
+  },
+  {
+   "request": "VP_CLOUD_AI SW_ENG",
+   "kind": "cohort_brief",
+   "repeat": 1,
+   "code_written": {
+    "status": "RELEASED",
+    "route": "AUTO_RELEASE"
+   },
+   "status": "RELEASED",
+   "route": "AUTO_RELEASE",
+   "same_end_as_code_written": true,
+   "verified": true,
+   "ended_with": "model_first_draft",
+   "model_calls": 1,
+   "errors": [],
+   "drafts": [
+    {
+     "by": "model_draft",
+     "text": "No cohort in the VP_CLOUD_AI software engineering group passed the internal cliff and market loss gate across the 500 employees spanning the 87 cliff cases, resulting in zero retention spend. Consequently, the remaining budget stays at $2,150,000 for the executive compensation brief.",
+     "rejected_for": []
+    }
+   ],
+   "elapsed_ms": 1416.8,
+   "code_written_ms": 13.2
+  },
+  {
+   "request": "VP_ENT_APPS",
+   "kind": "org_brief",
+   "repeat": 1,
+   "code_written": {
+    "status": "RELEASED",
+    "route": "AUTO_RELEASE"
+   },
+   "status": "RELEASED",
+   "route": "AUTO_RELEASE",
+   "same_end_as_code_written": true,
+   "verified": true,
+   "ended_with": "model_first_draft",
+   "model_calls": 1,
+   "errors": [],
+   "drafts": [
+    {
+     "by": "model_draft",
+     "text": "The executive compensation brief for the VP_ENT_APPS scope covering 500 employees results in 0 cliff cases across the organization. Because no cohort passed the gate, the retention spend remains at 0 while the total budget remains $1,050,000.",
+     "rejected_for": []
+    }
+   ],
+   "elapsed_ms": 6260.2,
+   "code_written_ms": 30.9
+  },
+  {
+   "request": "VP_ENT_APPS DATA_SCI",
+   "kind": "cohort_brief",
+   "repeat": 1,
+   "code_written": {
+    "status": "RELEASED",
+    "route": "AUTO_RELEASE"
+   },
+   "status": "RELEASED",
+   "route": "AUTO_RELEASE",
+   "same_end_as_code_written": true,
+   "verified": true,
+   "ended_with": "model_first_draft",
+   "model_calls": 1,
+   "errors": [],
+   "drafts": [
+    {
+     "by": "model_draft",
+     "text": "No cohort in VP_ENT_APPS passed the convergent internal-cliff and market-loss gate across 500 employees, resulting in no retention spend. The remaining budget is $1,050,000 for the data science group.",
+     "rejected_for": []
+    }
+   ],
+   "elapsed_ms": 1320.2,
+   "code_written_ms": 11.9
+  },
+  {
+   "request": "VP_ENT_APPS PROD_MGMT",
+   "kind": "cohort_brief",
+   "repeat": 1,
+   "code_written": {
+    "status": "RELEASED",
+    "route": "AUTO_RELEASE"
+   },
+   "status": "RELEASED",
+   "route": "AUTO_RELEASE",
+   "same_end_as_code_written": true,
+   "verified": true,
+   "ended_with": "model_first_draft",
+   "model_calls": 1,
+   "errors": [],
+   "drafts": [
+    {
+     "by": "model_draft",
+     "text": "No cohort in VP_ENT_APPS passed the convergent internal-cliff and market-loss gate across 500 employees, so this brief costs no retention spend. The remaining budget stays at $1,050,000.",
+     "rejected_for": []
+    }
+   ],
+   "elapsed_ms": 829.0,
+   "code_written_ms": 11.7
+  },
+  {
+   "request": "VP_ENT_APPS SW_ENG",
+   "kind": "cohort_brief",
+   "repeat": 1,
+   "code_written": {
+    "status": "RELEASED",
+    "route": "AUTO_RELEASE"
+   },
+   "status": "RELEASED",
+   "route": "AUTO_RELEASE",
+   "same_end_as_code_written": true,
+   "verified": true,
+   "ended_with": "model_first_draft",
+   "model_calls": 1,
+   "errors": [],
+   "drafts": [
+    {
+     "by": "model_draft",
+     "text": "No cohort in VP_ENT_APPS passed the convergent internal-cliff and market-loss gate across 500 employees, resulting in 0 cliff cases and no retention spend. The budget remains $1,050,000 for the scope.",
+     "rejected_for": []
+    }
+   ],
+   "elapsed_ms": 6715.8,
+   "code_written_ms": 11.3
+  },
+  {
+   "request": "VP_ENT_APPS UX_DESIGN",
+   "kind": "cohort_brief",
+   "repeat": 1,
+   "code_written": {
+    "status": "RELEASED",
+    "route": "AUTO_RELEASE"
+   },
+   "status": "RELEASED",
+   "route": "AUTO_RELEASE",
+   "same_end_as_code_written": true,
+   "verified": true,
+   "ended_with": "model_first_draft",
+   "model_calls": 1,
+   "errors": [],
+   "drafts": [
+    {
+     "by": "model_draft",
+     "text": "No cohort in VP_ENT_APPS passed the convergent internal-cliff and market-loss gate across 500 employees, leaving 0 cliff cases and requiring no retention spend. Consequently, the remaining budget stays at $1,050,000 for the cohort retention brief.",
+     "rejected_for": []
+    }
+   ],
+   "elapsed_ms": 931.7,
+   "code_written_ms": 11.9
+  },
+  {
+   "request": "VP_INFRA_SRE",
+   "kind": "org_brief",
+   "repeat": 1,
+   "code_written": {
+    "status": "RELEASED",
+    "route": "AUTO_RELEASE"
+   },
+   "status": "RELEASED",
+   "route": "AUTO_RELEASE",
+   "same_end_as_code_written": true,
+   "verified": true,
+   "ended_with": "model_first_draft",
+   "model_calls": 1,
+   "errors": [],
+   "drafts": [
+    {
+     "by": "model_draft",
+     "text": "No cohort in the VP_INFRA_SRE organization passed the convergent internal-cliff and market-loss gate across the 500 employees, resulting in no retention spend. The total budget remains $6,400,000 for the 6 cliff cases.",
+     "rejected_for": []
+    }
+   ],
+   "elapsed_ms": 1080.1,
+   "code_written_ms": 33.8
+  },
+  {
+   "request": "VP_INFRA_SRE SRE_ENG",
+   "kind": "cohort_brief",
+   "repeat": 1,
+   "code_written": {
+    "status": "RELEASED",
+    "route": "AUTO_RELEASE"
+   },
+   "status": "RELEASED",
+   "route": "AUTO_RELEASE",
+   "same_end_as_code_written": true,
+   "verified": true,
+   "ended_with": "model_first_draft",
+   "model_calls": 1,
+   "errors": [],
+   "drafts": [
+    {
+     "by": "model_draft",
+     "text": "For the VP_INFRA_SRE and SRE_ENG cohort containing 500 employees, the retention brief costs no retention spend as no cohort passed the convergent internal-cliff and market-loss gate. Consequently, the budget remains $6,400,000 for the 6 cliff cases.",
+     "rejected_for": []
+    }
+   ],
+   "elapsed_ms": 1289.5,
+   "code_written_ms": 12.6
+  },
+  {
+   "request": "VP_INFRA_SRE SW_ENG",
+   "kind": "cohort_brief",
+   "repeat": 1,
+   "code_written": {
+    "status": "RELEASED",
+    "route": "AUTO_RELEASE"
+   },
+   "status": "RELEASED",
+   "route": "AUTO_RELEASE",
+   "same_end_as_code_written": true,
+   "verified": true,
+   "ended_with": "model_first_draft",
+   "model_calls": 1,
+   "errors": [],
+   "drafts": [
+    {
+     "by": "model_draft",
+     "text": "No cohort in VP_INFRA_SRE passed the convergent internal-cliff and market-loss gate across 500 employees, so this brief costs no retention spend. The remaining budget is $6,400,000 for the 6 cliff cases.",
+     "rejected_for": []
+    }
+   ],
+   "elapsed_ms": 991.8,
+   "code_written_ms": 13.2
+  },
+  {
+   "request": "VP_INFRA_SRE SYS_NET_ENG",
+   "kind": "cohort_brief",
+   "repeat": 1,
+   "code_written": {
+    "status": "RELEASED",
+    "route": "AUTO_RELEASE"
+   },
+   "status": "RELEASED",
+   "route": "AUTO_RELEASE",
+   "same_end_as_code_written": true,
+   "verified": true,
+   "ended_with": "model_first_draft",
+   "model_calls": 1,
+   "errors": [],
+   "drafts": [
+    {
+     "by": "model_draft",
+     "text": "No cohort in VP_INFRA_SRE passed the convergent internal-cliff and market-loss gate, leaving SYS_NET_ENG with no signal and this brief costing no retention spend out of a remaining budget of $6,400,000 for the 6 cliff cases across 500 employees. This brief summarizes the evaluation of the cohort containing 500 employees and 6 cliff cases, maintaining a total available budget of $6,400,000.",
+     "rejected_for": []
+    }
+   ],
+   "elapsed_ms": 1604.5,
+   "code_written_ms": 12.4
+  },
+  {
+   "request": "VP_INFRA_SRE TECH_PROG_MGMT",
+   "kind": "cohort_brief",
+   "repeat": 1,
+   "code_written": {
+    "status": "RELEASED",
+    "route": "AUTO_RELEASE"
+   },
+   "status": "RELEASED",
+   "route": "AUTO_RELEASE",
+   "same_end_as_code_written": true,
+   "verified": true,
+   "ended_with": "model_first_draft",
+   "model_calls": 1,
+   "errors": [],
+   "drafts": [
+    {
+     "by": "model_draft",
+     "text": "No cohort in VP_INFRA_SRE passed the convergent internal-cliff and market-loss gate across 500 employees, leaving 6 cliff cases for TECH_PROG_MGMT with no signal. Consequently, this brief costs no retention spend, and the budget remains $6,400,000.",
+     "rejected_for": []
+    }
+   ],
+   "elapsed_ms": 934.5,
+   "code_written_ms": 12.6
+  },
+  {
+   "request": "VP_SEC_INTEL",
+   "kind": "org_brief",
+   "repeat": 1,
+   "code_written": {
+    "status": "AWAITING_APPROVAL",
+    "route": "EXECUTIVE_SIGN_OFF"
+   },
+   "status": "AWAITING_APPROVAL",
+   "route": "EXECUTIVE_SIGN_OFF",
+   "same_end_as_code_written": true,
+   "verified": true,
+   "ended_with": "model_first_draft",
+   "model_calls": 1,
+   "errors": [],
+   "drafts": [
+    {
+     "by": "model_draft",
+     "text": "The VP_SEC_INTEL organization with 500 employees features 48 cliff cases evaluated against an effective budget of $2,900,000 and ledger of $2,900,000. Option 1 addresses 4 of 5 departures and 6 of 6 declined offers for $2,574,400, while Option 2 covers 5 of 5 departures and 6 of 6 declined offers for $3,403,200.",
+     "rejected_for": []
+    }
+   ],
+   "elapsed_ms": 1051.8,
+   "code_written_ms": 45.9
+  },
+  {
+   "request": "VP_SEC_INTEL CYBER_SEC_ENG",
+   "kind": "cohort_brief",
+   "repeat": 1,
+   "code_written": {
+    "status": "AWAITING_APPROVAL",
+    "route": "EXECUTIVE_SIGN_OFF"
+   },
+   "status": "AWAITING_APPROVAL",
+   "route": "EXECUTIVE_SIGN_OFF",
+   "same_end_as_code_written": true,
+   "verified": true,
+   "ended_with": "model_first_draft",
+   "model_calls": 1,
+   "errors": [],
+   "drafts": [
+    {
+     "by": "model_draft",
+     "text": "The executive compensation brief for the 500 employees encompassing 48 cliff cases addresses convergent retention and market risk against an effective budget of $2,900,000. Option 1 addresses 4 of 5 departures and 6 of 6 declined offers for $2,574,400, Option 2 addresses 5 of 5 departures and 6 of 6 declined offers for $3,403,200, and Option 3 addresses 3 of 5 departures and 6 of 6 declined offers for $2,142,000.",
+     "rejected_for": []
+    }
+   ],
+   "elapsed_ms": 1385.0,
+   "code_written_ms": 22.8
+  },
+  {
+   "request": "VP_SEC_INTEL SEC_OPS",
+   "kind": "cohort_brief",
+   "repeat": 1,
+   "code_written": {
+    "status": "RELEASED",
+    "route": "AUTO_RELEASE"
+   },
+   "status": "RELEASED",
+   "route": "AUTO_RELEASE",
+   "same_end_as_code_written": true,
+   "verified": true,
+   "ended_with": "model_first_draft",
+   "model_calls": 1,
+   "errors": [],
+   "drafts": [
+    {
+     "by": "model_draft",
+     "text": "The VP_SEC_INTEL executive compensation brief covers 48 cliff cases across 500 employees within SEC_OPS, where no cohort passed the convergent internal-cliff and market-loss gate. Consequently, this brief costs no retention spend, and the budget remains $2,900,000.",
+     "rejected_for": []
+    }
+   ],
+   "elapsed_ms": 1030.9,
+   "code_written_ms": 12.0
+  },
+  {
+   "request": "VP_SEC_INTEL SW_ENG",
+   "kind": "cohort_brief",
+   "repeat": 1,
+   "code_written": {
+    "status": "RELEASED",
+    "route": "AUTO_RELEASE"
+   },
+   "status": "RELEASED",
+   "route": "AUTO_RELEASE",
+   "same_end_as_code_written": true,
+   "verified": true,
+   "ended_with": "model_first_draft",
+   "model_calls": 1,
+   "errors": [],
+   "drafts": [
+    {
+     "by": "model_draft",
+     "text": "No cohort in VP_SEC_INTEL passed the convergent internal-cliff and market-loss gate among 48 cliff cases across 500 employees, resulting in zero retention spend for SW_ENG. Consequently, the total budget remains at $2,900,000 for this cohort retention brief.",
+     "rejected_for": []
+    }
+   ],
+   "elapsed_ms": 1174.4,
+   "code_written_ms": 11.9
+  },
+  {
+   "request": "VP_SEC_INTEL THREAT_RES",
+   "kind": "cohort_brief",
+   "repeat": 1,
+   "code_written": {
+    "status": "RELEASED",
+    "route": "AUTO_RELEASE"
+   },
+   "status": "RELEASED",
+   "route": "AUTO_RELEASE",
+   "same_end_as_code_written": true,
+   "verified": true,
+   "ended_with": "model_first_draft",
+   "model_calls": 1,
+   "errors": [],
+   "drafts": [
+    {
+     "by": "model_draft",
+     "text": "No cohort in the VP_SEC_INTEL threat resilience scope passed the convergent internal-cliff and market-loss gate, leaving 48 cliff cases across 500 employees with no retention spend and preserving the $2,900,000 budget.",
+     "rejected_for": []
+    }
+   ],
+   "elapsed_ms": 1289.8,
+   "code_written_ms": 12.1
+  },
+  {
+   "request": "policy question 1",
+   "kind": "policy_question",
+   "repeat": 1,
+   "code_written": {
+    "status": "RELEASED",
+    "route": "AUTO_RELEASE"
+   },
+   "status": "RELEASED",
+   "route": "AUTO_RELEASE",
+   "same_end_as_code_written": true,
+   "verified": true,
+   "ended_with": "model_first_draft",
+   "model_calls": 1,
+   "errors": [],
+   "drafts": [
+    {
+     "by": "model_draft",
+     "text": "Apex Cloud and AI Corp evaluates standard new-hire offers up to 1.00 Compa-Ratio and 1.20x Equity Guideline within the Offers Desk. Current employees who have a projected 2026-to-2027 cashflow drop smaller than 10% with peer positioning above the 50th percentile are placed in Tier 0 to hold and take no proactive budget action.",
+     "rejected_for": []
+    }
+   ],
+   "elapsed_ms": 1997.2,
+   "code_written_ms": 7.5
+  },
+  {
+   "request": "policy question 2",
+   "kind": "policy_question",
+   "repeat": 1,
+   "code_written": {
+    "status": "RELEASED",
+    "route": "AUTO_RELEASE"
+   },
+   "status": "RELEASED",
+   "route": "AUTO_RELEASE",
+   "same_end_as_code_written": true,
+   "verified": true,
+   "ended_with": "model_first_draft",
+   "model_calls": 1,
+   "errors": [],
+   "drafts": [
+    {
+     "by": "model_draft",
+     "text": "For current employees, Tier 1 retention grants are sized at 50% to 75% of the annual equity refresh guideline over 24 months to restore 2027 intended cashflow to at least 90% of 2026 levels for those facing a projected cashflow drop between 15% and 22% or dropping below the 25th percentile. Meanwhile, new-hire reviews cover base bands, sign-on cash, equity at offer, and leveling at offer within Section 2.1 thresholds without costing proactive budget.",
+     "rejected_for": []
+    }
+   ],
+   "elapsed_ms": 2379.0,
+   "code_written_ms": 4.9
+  },
+  {
+   "request": "policy question 3",
+   "kind": "policy_question",
+   "repeat": 1,
+   "code_written": {
+    "status": "RELEASED",
+    "route": "AUTO_RELEASE"
+   },
+   "status": "RELEASED",
+   "route": "AUTO_RELEASE",
+   "same_end_as_code_written": true,
+   "verified": true,
+   "ended_with": "model_first_draft",
+   "model_calls": 1,
+   "errors": [],
+   "drafts": [
+    {
+     "by": "model_draft",
+     "text": "An off-cycle adjustment lifts a cliff-facing employee's base salary to at most a 0.95 compa-ratio while never lowering pay, whereas the compensation governance playbook states no rule for new hires regarding offer band reviews.",
+     "rejected_for": []
+    }
+   ],
+   "elapsed_ms": 6116.9,
+   "code_written_ms": 4.6
+  }
+ ]
+}
