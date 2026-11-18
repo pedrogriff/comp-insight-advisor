@@ -41,7 +41,7 @@ from src.guardrails.pipeline import (
     GuardedResult,
 )
 from src.memory.partner_memory import ALL_ORGS, ALLOWED_KEYS, POLICY_LOCKED, PartnerMemory, PolicyLockedError
-from src.models.router import VALID_PROVIDERS, ModelRouter
+from src.models.router import VALID_PROVIDERS, ModelCallRecord, ModelRouter, describe_writer_calls
 from src.retrieval.policy_search import PLAYBOOK_PATH, load_policy_chunks
 from src.tools.deterministic_analytics import DEFAULT_DB_PATH
 
@@ -58,13 +58,14 @@ PARTNER_PROFILES: dict[str, tuple[str, tuple[str, ...] | None]] = {
     "HRBP_SEC_ONLY (Scoped to VP_SEC_INTEL)": ("HRBP_SEC_ONLY", ("VP_SEC_INTEL",)),
 }
 
+# The banner names the model each provider will call, so these labels stay true when .env overrides one.
 WRITER_MODES: dict[str, str] = {
     "Auto (live LLM if key set, else deterministic)": "auto",
     "Deterministic offline writer (zero API calls)": "offline",
-    "OpenRouter (google/gemini-2.5-pro)": "openrouter",
-    "Google Gemini API (gemini-2.5-pro)": "gemini",
-    "OpenAI API (gpt-4.1)": "openai",
-    "Local Ollama (gemma3:12b)": "ollama",
+    "OpenRouter API": "openrouter",
+    "Google Gemini API": "gemini",
+    "OpenAI API": "openai",
+    "Local Ollama server": "ollama",
     "Fault-injection demo ($9,999,999 hallucination)": "seeded_hallucination",
 }
 
@@ -233,7 +234,7 @@ class AdvisorAppController:
     def format_status_markdown(result: GuardedResult, engine_name: str, model_note: str = "") -> str:
         parts = [
             f"### Status: `{result.status}` | Thread: `{result.thread_id}` | Latency: `{result.elapsed_ms:.1f} ms`",
-            f"- **Graph engine:** `{engine_name}`" + (f" | **Synthesis model:** {model_note}" if model_note else ""),
+            f"- **Graph engine:** `{engine_name}`" + (f" | **Summary writer:** {model_note}" if model_note else ""),
         ]
         if result.route:
             reasons = ", ".join(f"`{r}`" for r in result.reasons) or "`none`"
@@ -279,7 +280,12 @@ class AdvisorAppController:
             lines.append(f"| Option {g.index} | `{g.role}` | `${g.cost_usd:,.0f}` | {fit} | {who} |")
         return "\n".join(lines)
 
-    def format_trace_markdown(self, thread_id: str, state: SquadState | None = None) -> str:
+    def format_trace_markdown(
+        self,
+        thread_id: str,
+        state: SquadState | None = None,
+        writer_calls: list[ModelCallRecord] | tuple[ModelCallRecord, ...] = (),
+    ) -> str:
         if not thread_id:
             return "_Run a request to inspect its step trace, specialist `Finding` objects, and SHA-256 audit log._"
         advisor, _ = self._advisor_for("offline")
@@ -295,6 +301,17 @@ class AdvisorAppController:
         if trace["nodes"]:
             node_str = " -> ".join(f"`{n['node']}`" for n in trace["nodes"])
             sections.append(f"**Checkpointed node order:** {node_str}")
+
+        if writer_calls:
+            w_rows = [
+                f"#### Summary Writer Calls ({len(writer_calls)} this run)",
+                "| # | Writer | Outcome | Note |",
+                "| :--- | :--- | :--- | :--- |",
+            ]
+            for idx, call in enumerate(writer_calls, 1):
+                found = "; ".join(call.problems) or call.note or "nothing to flag"
+                w_rows.append(f"| {idx} | `{call.model}` | `{call.outcome}` | {found.replace('|', '/')} |")
+            sections.append("\n".join(w_rows))
 
         if state is not None:
             if state.messages:
@@ -367,11 +384,8 @@ class AdvisorAppController:
         before_calls = len(router.call_log)
 
         result = advisor.run(question.strip(), vp_org_code=vp_org, job_family=family, partner=partner)
-        model_note = ""
-        if len(router.call_log) > before_calls:
-            last = router.call_log[-1]
-            fb = " (deterministic fallback)" if last.used_fallback else ""
-            model_note = f"`{last.model}`{fb}"
+        writer_calls = router.call_log[before_calls:]
+        model_note = describe_writer_calls(writer_calls)
 
         brief_md = result.brief if result.brief else f"**No brief generated.** {result.message}"
         return {
@@ -383,7 +397,7 @@ class AdvisorAppController:
             "brief_md": brief_md,
             "clauses_md": self.format_clauses_markdown(result.state),
             "gate_md": self.format_gate_markdown(result),
-            "trace_md": self.format_trace_markdown(result.thread_id, result.state),
+            "trace_md": self.format_trace_markdown(result.thread_id, result.state, writer_calls),
             "pending_rows": self.pending_table_rows(partner_label),
         }
 

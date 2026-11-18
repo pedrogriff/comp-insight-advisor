@@ -9,21 +9,32 @@ import unittest
 from unittest.mock import patch
 import urllib.error
 
-from src.app import DEMO_PRESETS, AdvisorAppController, gradio_available
+from src.app import DEMO_PRESETS, WRITER_MODES, AdvisorAppController, gradio_available
 from src.guardrails.pipeline import AWAITING_APPROVAL, HOLD, REFUSED, RELEASED, GuardedAdvisor
 from src.models.router import (
     FAST_TOOL_MODEL,
     GEMINI_REASONING_MODEL,
     OLLAMA_REASONING_MODEL,
     OPENAI_REASONING_MODEL,
+    OUTCOME_MODEL,
+    OUTCOME_REJECTED,
     REASONING_SYNTHESIS_MODEL,
     ModelRouter,
+    describe_writer_calls,
     load_dotenv_file,
     normalize_ollama_url,
 )
 
+NO_OVERRIDES = {"ADVISOR_FAST_MODEL": "", "ADVISOR_REASONING_MODEL": ""}
+
 
 class ModelRouterTests(unittest.TestCase):
+    def setUp(self) -> None:
+        # A model name exported in the shell must not change what these tests see.
+        patcher = patch.dict(os.environ, NO_OVERRIDES)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def test_normalize_ollama_url_and_dotenv_loader(self) -> None:
         self.assertEqual(normalize_ollama_url("http://localhost:11434/v1"), "http://localhost:11434")
         self.assertEqual(normalize_ollama_url("http://127.0.0.1:11434/v1/"), "http://127.0.0.1:11434")
@@ -60,11 +71,12 @@ class ModelRouterTests(unittest.TestCase):
         def fake_transport(url: str, headers: dict, payload: dict, timeout_s: float) -> dict:
             calls.append({"url": url, "headers": headers, "payload": payload, "timeout": timeout_s})
             if len(calls) == 1:
-                # Round 0: model invents an ungrounded $7,777,777 figure.
+                # Try 1: the model invents an ungrounded $7,777,777 figure.
                 return {"choices": [{"message": {"content": "Spend $7,777,777 across VP_CLOUD_AI immediately."}}]}
-            # Round 1: prompt carries reviewer issues, and the model writes grounded prose.
+            # Try 2: the prompt carries the fact check's issues, and the model writes grounded prose.
             user_prompt = payload["messages"][1]["content"]
             self.assertIn("failed deterministic verification", user_prompt)
+            self.assertIn("new_figure: the model wrote 7,777,777", user_prompt)
             return {
                 "choices": [
                     {
@@ -87,8 +99,15 @@ class ModelRouterTests(unittest.TestCase):
             res = advisor.run("Prepare the Q1 retention brief for VP_CLOUD_AI.", "VP_CLOUD_AI")
             self.assertEqual(res.status, AWAITING_APPROVAL)
             self.assertEqual(len(calls), 2)
-            self.assertEqual(res.state.revisions, 1)
+            # The fact check in the router caught the figure, so the reviewer never saw that draft.
+            self.assertEqual(res.state.revisions, 0)
+            self.assertEqual([call.outcome for call in router.call_log], [OUTCOME_REJECTED, OUTCOME_MODEL])
+            self.assertEqual(
+                describe_writer_calls(router.call_log),
+                f"`{REASONING_SYNTHESIS_MODEL}`, draft accepted by the fact check after 1 draft rejected",
+            )
             self.assertIn("$1,995,600", res.brief)
+            self.assertNotIn("7,777,777", res.brief)
 
         # Network error falls back cleanly to the deterministic writer when fallback_on_error=True.
         def failing_transport(url: str, headers: dict, payload: dict, timeout_s: float) -> dict:
@@ -100,9 +119,45 @@ class ModelRouterTests(unittest.TestCase):
             res = advisor.run("Prepare the Q1 retention brief for VP_CLOUD_AI.", "VP_CLOUD_AI")
             self.assertEqual(res.status, AWAITING_APPROVAL)
             self.assertTrue(ollama_router.call_log[-1].used_fallback)
+            self.assertEqual(
+                describe_writer_calls(ollama_router.call_log),
+                f"`{OLLAMA_REASONING_MODEL}` not reached, code-written summary used",
+            )
+
+    def test_writer_line_names_what_wrote_the_summary(self) -> None:
+        self.assertEqual(describe_writer_calls([]), "")
+        with tempfile.TemporaryDirectory() as tmp:
+            offline = ModelRouter(provider="offline", env_path=None)
+            GuardedAdvisor(runtime_dir=tmp, writer_fn=offline.make_writer()).run(
+                "Prepare the Q1 retention brief for VP_CLOUD_AI.", "VP_CLOUD_AI")
+            self.assertEqual(describe_writer_calls(offline.call_log), "code-written summary, no model call")
+
+        def inventing(url: str, headers: dict, payload: dict, timeout_s: float) -> dict:
+            return {"choices": [{"message": {"content": "Spend $7,777,777 across VP_CLOUD_AI immediately."}}]}
+
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(
+            os.environ, {"OPENROUTER_API_KEY": "sk-or-test-real-key"}, clear=True
+        ):
+            router = ModelRouter(provider="openrouter", env_path=None, transport=inventing)
+            res = GuardedAdvisor(runtime_dir=tmp, writer_fn=router.make_writer()).run(
+                "Prepare the Q1 retention brief for VP_CLOUD_AI.", "VP_CLOUD_AI")
+            self.assertEqual(res.status, AWAITING_APPROVAL)
+            self.assertEqual(
+                describe_writer_calls(router.call_log),
+                f"`{REASONING_SYNTHESIS_MODEL}`, 2 drafts rejected by the fact check, code-written summary used",
+            )
 
 
 class AdvisorAppControllerTests(unittest.TestCase):
+    def setUp(self) -> None:
+        # Presets 1 and 2 use the "auto" writer. Without this, a real key in .env on the machine that runs
+        # the tests would send them to a live model.
+        no_keys = {name: "" for name in ("OPENROUTER_API_KEY", "GEMINI_API_KEY", "OPENAI_API_KEY", "OLLAMA_ENABLED")}
+        for patcher in (patch("src.models.router.load_dotenv_file", return_value={}),
+                        patch.dict(os.environ, no_keys)):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
     def test_all_six_demo_presets_and_trace_inspector(self) -> None:
         self.assertIsInstance(gradio_available(), bool)
         with tempfile.TemporaryDirectory() as tmp:
@@ -118,10 +173,19 @@ class AdvisorAppControllerTests(unittest.TestCase):
             ]
             names = list(DEMO_PRESETS.keys())
             self.assertEqual(len(names), 6)
+            writer_lines = []
             for name, want_status in zip(names, expected_statuses):
                 p, o, fam, w, q = ctrl.apply_preset(name)
+                self.assertIn(w, WRITER_MODES, name)
                 out = ctrl.run_investigation(p, o, fam, w, q)
                 self.assertEqual(out["status"], want_status, name)
+                writer_lines.append(out["status_md"].partition("**Summary writer:** ")[2].splitlines()[:1])
+            # The status card says what wrote each summary. A refused request never reaches the writer.
+            code_written = ["code-written summary, no model call"]
+            self.assertEqual(writer_lines[:5], [code_written, code_written, code_written, [], []])
+            self.assertEqual(writer_lines[5], ["`fault-injection-writer`, a seeded fault for the reviewer to catch"])
+            self.assertIn("Summary Writer Calls (3 this run)", out["trace_md"])
+            self.assertIn("| `fault-injection-writer` | `seeded_fault` |", out["trace_md"])
 
             # Inspect Preset 1 (VP_CLOUD_AI) clauses, Finding table, and approval flow.
             p1 = ctrl.apply_preset(names[0])
