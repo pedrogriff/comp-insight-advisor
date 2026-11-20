@@ -461,7 +461,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <!-- Language model -->
         <g filter="url(#card-shadow)">
           <rect x="448" y="258" width="176" height="38" rx="5" fill="#faf5ff" stroke="#7c3aed" stroke-width="1.5" />
-          <text x="536" y="274" font-size="8.6" font-weight="700" fill="#581c87" text-anchor="middle">Language model, optional</text>
+          <text x="536" y="274" font-size="8.6" font-weight="700" fill="#581c87" text-anchor="middle">Language model</text>
           <text x="536" y="287" font-size="7.3" font-weight="600" fill="#6b21a8" text-anchor="middle">writes one paragraph, held to the facts</text>
         </g>
 
@@ -522,7 +522,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       </svg>
     </div>
     <div class="diagram-caption">
-      <strong>Figure 1:</strong> The final system. A request passes the G1 screen, five nodes run with scoped tools on read-only data, and one optional model call writes the summary paragraph under a fact check. The G4 output check and the risk router then release the brief, send it to the approval gate, or hold it for a person.
+      <strong>Figure 1:</strong> The final system. A request passes the G1 screen, five nodes run with scoped tools on read-only data, and one model call writes the summary paragraph under a fact check. The G4 output check and the risk router then release the brief, send it to the approval gate, or hold it for a person.
     </div>
   </div>
 
@@ -552,14 +552,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <li>Nothing that commits spend reaches a VP without a person's decision.</li>
       <li>The advisor refuses unsafe requests and answers legitimate ones.</li>
     </ol>
-    <p><strong>Scope and constraints.</strong> The advisor reads and never writes, so a release is a document and no pay record changes. It answers about cohorts and refuses questions about one person's pay. It runs with no API key, because code can write the whole brief.</p>
+    <p><strong>Scope and constraints.</strong> The advisor reads and never writes, so a release is a document and no pay record changes. It answers about cohorts and refuses questions about one person's pay. If no model is configured or reachable, code writes the summary, so a brief never waits on a provider.</p>
   </div>
 
   <div class="section-block">
     <h3 class="sub-header">4. Final system architecture</h3>
     <p>G1 comes first. It checks the playbook's hash and screens the request for prompt injection, questions about one person's pay, protected attributes, write orders and orgs outside the partner's scope, before any tool or model runs.</p>
     <p>Five nodes then run as a LangGraph <code>StateGraph</code> and pass typed state, never chat history. The supervisor plans the run and loads the partner's standing preferences. Two specialists run in parallel. The proactive strategist scans the roster, matches each reason for leaving to the lever that addresses it and searches lever plans with a beam of width 3. The reactive analyst reads the offers log, puts 95% intervals on its rates and searches the interview notes. The executive synthesizer composes one plan per org under the shared budget and retrieves each lever's clauses, filtered by lever and population. The governance reviewer checks every figure, clause and sign-off against the tool outputs and sends a failed draft back at most twice.</p>
-    <p>The graph calls a language model at one point, the summary paragraph. The model gets code-written facts, and code rejects a draft that adds a number or a forbidden claim. After two rejected tries, the brief keeps the code-written paragraph. Every other decision is code.</p>
+    <p>The graph calls a language model at one point, the summary paragraph, because wording is the one step with no exact answer. The model gets code-written facts, and code rejects a draft that adds a number or a forbidden claim. After two rejected tries, the brief keeps the code-written paragraph. Every other decision is code.</p>
     <p>G4 then checks the output and the run's trace, and a risk router picks a lane. It releases a cited policy answer or a brief with no spend. A costed brief waits at an approval gate for the approvers the playbook names. Any flag holds the run for a person.</p>
   </div>
 
@@ -572,16 +572,17 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <tr><td>2</td><td>SQL tools that return summaries, not the raw roster</td><td>Graders asked me to separate why people leave. A driver-fit tool matches each reason to a lever</td></tr>
         <tr><td>3</td><td>38 tagged clauses and filtered retrieval</td><td>Graders asked about questions that span populations. A router runs one filtered query per side</td></tr>
         <tr><td>4</td><td>Tree-of-Thought beam search over lever plans</td><td>Graders asked whether pruning loses good plans. I tested the beam against exhaustive search</td></tr>
-        <tr><td>5</td><td>Five nodes with scoped tools, one plan per org</td><td>My benchmark showed the saving comes from composing teams under one budget, not from the number of agents</td></tr>
-        <tr><td>6</td><td>Guardrails, approval gate, audit log, console</td><td>The final evaluation found that policy answers skipped the figure check. I fixed it and added 3 seeded faults</td></tr>
+        <tr><td>5</td><td>Five nodes with scoped tools, one plan per org</td><td>My benchmark showed the saving comes from composing teams under one budget, not from the number of agents. Graders asked how shared state protects pay data. The roster scan was passing on rows with employee IDs, and tools now hand over counts only</td></tr>
+        <tr><td>6</td><td>Guardrails, approval gate, audit log, console</td><td>Graders suggested counting what sends briefs to review, which the scorecard now does, and an embedding screen for reworded attacks, which is the next test. The final evaluation found that policy answers skipped the figure check. I fixed it and added 3 seeded faults</td></tr>
       </tbody>
     </table>
     <p>Two designs changed. Tree of Thought became a search that code scores, because every plan's cost and coverage are computable. Multi-agent became five nodes with at most 3 tools each, because I can test a node with a narrow job on its own.</p>
+    <p>Three course methods are left out on purpose. No model picks a tool or reasons step by step, because every decision in this workflow has an answer code can check. Nothing is fine-tuned, because pay facts belong in tools. And the advisor is not packaged as a plugin, because its user works in the console.</p>
   </div>
 
   <div class="section-block">
     <h3 class="sub-header">6. Implementation overview</h3>
-    <p>The core is Python 3.12 with the standard library: <code>sqlite3</code> opened read-only for the roster tools, BM25 and reciprocal rank fusion for retrieval, and JSON files for test cases. LangGraph supplies the <code>StateGraph</code>, <code>Send()</code> for the parallel branch, <code>SqliteSaver</code> for checkpoints and <code>interrupt()</code> for the approval gate. A standard-library engine runs the same nodes when LangGraph is absent. Gradio serves a three-tab console. Embeddings come from <code>nomic-embed-text</code> through Ollama, and saved scores replay them offline. The summary writer calls any OpenAI-compatible chat endpoint or a local Ollama server, and <code>src/models/router.py</code> names the models.</p>
+    <p>The core is Python 3.12 with the standard library: <code>sqlite3</code> opened read-only for the roster tools, BM25 and reciprocal rank fusion for retrieval, and JSON files for test cases. LangGraph supplies the <code>StateGraph</code>, <code>Send()</code> for the parallel branch, <code>SqliteSaver</code> for checkpoints and <code>interrupt()</code> for the approval gate. A standard-library engine runs the same nodes when LangGraph is absent. Gradio serves a three-tab console. Embeddings come from <code>nomic-embed-text</code> through Ollama, and saved scores replay them offline. The summary writer calls any OpenAI-compatible chat endpoint or a local Ollama server, and <code>src/models/router.py</code> names the models. For the recorded run I chose a small model, <code>gemini-3.5-flash-lite</code>, because code supplies every fact and the model only words them.</p>
   </div>
 
   <div class="section-block">
@@ -597,31 +598,35 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <tr><td>Does the screen refuse the right requests?</td><td>0 of 50 benign requests refused, 40 of 48 right on an unseen split</td></tr>
         <tr><td>Do later layers contain what the screen misses?</td><td>10 of 10, through scoped tools, the verifier and the approval route</td></tr>
         <tr><td>Do the checks catch a wrong brief?</td><td>158 of 163 seeded faults rejected, 23 of 23 clean briefs passed</td></tr>
-        <tr><td>How often must a person look?</td><td>5 of 23 requests waited for sign-off, 21.7%</td></tr>
+        <tr><td>How often must a person look, and why?</td><td>5 of 23 requests waited for sign-off, 21.7%. The signals: an unreconciled budget ledger in 5 of 5, a Tier 3 grant in 5 of 5, a level decision in 4 of 5</td></tr>
+        <tr><td>Does shared state stay at cohort level?</td><td>0 of 23 final states and 0 of 3 stored files name an employee</td></tr>
+        <tr><td>Does a real model's paragraph pass?</td><td>With <code>gemini-3.5-flash-lite</code> writing, 22 of 23 runs ended on its first draft and 1 of 23 on its redraft</td></tr>
       </tbody>
     </table>
-    <p>The checks hold whatever the model writes. A stand-in model that invents a figure in every draft ended 23 of 23 runs on the code-written paragraph, with the route unchanged. <code>python3 -m src.evaluation.live_writer</code> runs the same requests with a real model and records what the checks did with each draft.</p>
+    <p>The checks hold whatever the model writes. A stand-in model that invents a figure in every draft ended 23 of 23 runs on the code-written paragraph, with the route unchanged. In the recorded run the fact check rejected 1 draft, which promised a guaranteed outcome, and the model's redraft passed. All 23 of 23 runs ended on the route of the code-written run. The tests replay those saved drafts against today's checks.</p>
   </div>
 
   <div class="section-block">
     <h3 class="sub-header">8. Safety and reliability considerations</h3>
-    <p>Code enforces every control, because a prompt is advice a model can ignore. Tools open the database read-only and accept only the orgs in the partner's session. A hash guards the playbook, and a changed file stops the run. The reviewer, the output check and the monitor reject wrong figures, wrong-population clauses, employee IDs, promises and decision claims. The gate refused 9 of 9 invalid approvals, and a waiting brief survives a restart. An audit log chains every step by hash, so an edit to any line shows. Each release carries the approver's decision, a label saying an AI assistant drafted it, and the hashes of the data and the playbook.</p>
+    <p>Code enforces every control, because a prompt is advice a model can ignore. Tools open the database read-only and accept only the orgs in the partner's session. They hand over counts, averages and totals, so the state the nodes share holds no row about one employee, and the monitor holds any run whose state names one. The model sees only the code-written facts. A hash guards the playbook, and a changed file stops the run. The reviewer, the output check and the monitor reject wrong figures, wrong-population clauses, employee IDs, promises and decision claims.</p>
+    <p>When sources disagree, code doesn't pick a side. The evidence check asks whether the roster and the offers log agree, and only a cohort where both show risk gets costed options. A rate whose 95% interval straddles its threshold counts as inconclusive, and the brief discloses it. A limit that no retrieved clause states is reported as a policy conflict and adds compensation governance as an approver.</p>
+    <p>Retries are bounded: one redraft for the model and two revisions for the reviewer. A third failure, a tool error or any flag holds the run for a person, who can inspect or discard it but never approve it. The gate refused 9 of 9 invalid approvals, and a waiting brief survives a restart. An audit log chains every step by hash, so an edit to any line shows. Each release carries the approver's decision, a label saying an AI assistant drafted it, and the hashes of the data and the playbook.</p>
   </div>
 
   <div class="section-block">
     <h3 class="sub-header">9. Limitations and next steps</h3>
     <ul class="bullets">
       <li>The data is synthetic, and no partner has used the advisor. The guardrails are tested on seeded faults, not validated on real requests. A pilot on masked data comes first.</li>
-      <li>The screen let 8 of 30 unseen violations through. Later layers contained them, and a model-based second screen is the next test.</li>
+      <li>The screen let 8 of 30 unseen violations through. Later layers contained them. The graders suggested an embedding screen that compares a request with known attack patterns, and that is the next test.</li>
       <li>The 5 missed faults are invented percentages that match a number elsewhere in the tool output. Binding each figure to its claim would close that gap.</li>
       <li>The checks read numbers, clauses and banned phrases. A reworded sentence with no number can still be wrong.</li>
-      <li>One model call is a narrow use of a model. Reading the org and team from free text, checked against the partner's scope, is the next place for one.</li>
+      <li>One model call is a narrow use of a model, and one recorded run on one model stands behind it. Reading the org and team from free text, checked against the partner's scope, is the next place for a model.</li>
     </ul>
   </div>
 
   <div class="section-block">
     <h3 class="sub-header">10. Public GitHub repository</h3>
-    <p>The repository is public at <a href="https://github.com/pedrogriff/comp-insight-advisor">https://github.com/pedrogriff/comp-insight-advisor</a>. Its README explains the problem, the architecture, setup and usage, and a section named "Review in five minutes" lists four commands: the tests, the scorecard, the console and one guarded brief. <code>experiments/final_evaluation/</code> holds the scorecard, and <code>checkpoints/</code> holds all seven write-ups.</p>
+    <p>The repository is public at <a href="https://github.com/pedrogriff/comp-insight-advisor">https://github.com/pedrogriff/comp-insight-advisor</a>. Its README explains the problem, the architecture, setup and usage. A section named "Review in five minutes" lists what to read on GitHub with nothing installed, maps each part of the video to its code, and gives four commands: the tests, the scorecard, the console and one guarded brief. <code>experiments/final_evaluation/</code> holds the scorecard, sample outputs and the recorded model run, and <code>checkpoints/</code> holds all seven write-ups.</p>
   </div>
 
 </body>

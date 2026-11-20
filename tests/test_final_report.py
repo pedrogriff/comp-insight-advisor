@@ -50,12 +50,16 @@ def written_submission(text: str) -> str:
     return text.split("## Written submission", 1)[1]
 
 
-def count_words(block: str) -> int:
-    """Words a reader sees: no heading marks, list marks, table rules or code ticks."""
+def count_words(block: str, tables: bool = False) -> int:
+    """Words a reader sees: no heading marks, list marks, table rules or code ticks.
+
+    Course staff said on Nov 18, 2026 that tables, figures and captions sit outside the suggested
+    1,000 to 1,500 words, so table rows count only when tables is True.
+    """
     lines = []
     for line in block.splitlines():
         line = line.strip()
-        if re.fullmatch(r"\|[\s:\-|]+\|", line):
+        if re.fullmatch(r"\|[\s:\-|]+\|", line) or (line.startswith("|") and not tables):
             continue
         line = re.sub(r"^(#+|-|\d+\.)\s+", "", line)
         lines.append(line.replace("|", " ").replace("*", "").replace("`", ""))
@@ -83,6 +87,8 @@ class FinalReportTests(unittest.TestCase):
 
     def test_length_is_inside_the_suggested_range(self) -> None:
         self.assertTrue(1000 <= count_words(self.body) <= 1500, count_words(self.body))
+        # The two tables carry results and the design history. They stay short enough to read on one page each.
+        self.assertLess(count_words(self.body, tables=True) - count_words(self.body), 500)
 
     def test_every_figure_is_in_the_scorecard(self) -> None:
         quotable = scorecard.quotable(self.card)

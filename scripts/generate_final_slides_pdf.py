@@ -427,7 +427,7 @@ SLIDES_HTML = """<!DOCTYPE html>
         <!-- Language model -->
         <g filter="url(#card-shadow)">
           <rect x="448" y="258" width="176" height="38" rx="5" fill="#faf5ff" stroke="#7c3aed" stroke-width="1.5" />
-          <text x="536" y="274" font-size="8.6" font-weight="700" fill="#581c87" text-anchor="middle">Language model, optional</text>
+          <text x="536" y="274" font-size="8.6" font-weight="700" fill="#581c87" text-anchor="middle">Language model</text>
           <text x="536" y="287" font-size="7.3" font-weight="600" fill="#6b21a8" text-anchor="middle">writes one paragraph, held to the facts</text>
         </g>
 
@@ -516,8 +516,8 @@ SLIDES_HTML = """<!DOCTYPE html>
         <tr><td>2</td><td>SQL tools that return summaries, not the raw roster</td><td>Graders asked me to separate why people leave. A driver-fit tool matches each reason to a lever</td></tr>
         <tr><td>3</td><td>38 tagged clauses and filtered retrieval</td><td>Graders asked about questions that span populations. One filtered query per side</td></tr>
         <tr><td>4</td><td>Tree-of-Thought beam search over lever plans</td><td>Graders asked whether pruning loses good plans. Beam tested against exhaustive search</td></tr>
-        <tr><td>5</td><td>Five nodes with scoped tools, one plan per org</td><td>My benchmark: the saving comes from composing teams under one budget, not from the number of agents</td></tr>
-        <tr><td>6</td><td>Guardrails, approval gate, audit log, console</td><td>The final evaluation found that policy answers skipped the figure check. Fixed, with 3 seeded faults added</td></tr>
+        <tr><td>5</td><td>Five nodes with scoped tools, one plan per org</td><td>Graders asked how shared state protects pay data. Tools now hand over counts, never one employee's row</td></tr>
+        <tr><td>6</td><td>Guardrails, approval gate, audit log, console</td><td>The final evaluation found that policy answers skipped the figure check. Fixed. Graders asked what triggers review. Counted</td></tr>
       </tbody>
     </table>
     <div class="footer"><span>Strategic Talent and Compensation Insight Advisor, key design decisions</span><span>5 / 8</span></div>
@@ -568,7 +568,7 @@ SLIDES_HTML = """<!DOCTYPE html>
         <div class="versus">18 of 23 released without a person</div>
       </div>
     </div>
-    <div class="takeaway">One command reruns all of it: <code>python3 -m src.evaluation.scorecard</code></div>
+    <div class="takeaway">With a real model writing, 22 of 23 first drafts passed and the check sent 1 back.</div>
     <div class="footer"><span>Strategic Talent and Compensation Insight Advisor, evaluation and results</span><span>6 / 8</span></div>
   </section>
 
@@ -583,7 +583,7 @@ SLIDES_HTML = """<!DOCTYPE html>
           <li>A README with the problem, the architecture, setup, and a five-minute review path</li>
           <li><code>src/</code>: tools, retrieval, planner, the five-node squad, guardrails, the console</li>
           <li><code>tests/</code>: unit tests that run offline with no packages</li>
-          <li><code>experiments/final_evaluation/</code>: the scorecard behind every figure here</li>
+          <li><code>experiments/final_evaluation/</code>: the scorecard behind every figure here, and the recorded model run</li>
           <li><code>checkpoints/</code>: all seven write-ups, this report included</li>
         </ul>
       </div>
@@ -594,7 +594,7 @@ SLIDES_HTML = """<!DOCTYPE html>
           <li>LangGraph for the graph, checkpoints and the approval pause</li>
           <li>Gradio for the console</li>
           <li><code>nomic-embed-text</code> through Ollama for embeddings</li>
-          <li>Any OpenAI-compatible model, or none, for the summary paragraph</li>
+          <li><code>gemini-3.5-flash-lite</code> for the summary paragraph, or any OpenAI-compatible model</li>
         </ul>
       </div>
     </div>
@@ -608,7 +608,7 @@ SLIDES_HTML = """<!DOCTYPE html>
       <div class="card good">
         <h2>What worked</h2>
         <ul>
-          <li>Giving the model one job and checking it in code. A stand-in model that invents a figure in every draft ended 23 of 23 runs on the code-written paragraph</li>
+          <li>Giving the model one job and checking it in code. A real model promised a guaranteed outcome once in 23 runs, and the check sent that draft back</li>
           <li>Evaluating every week. The final evaluation found a real hole, and a test now guards it</li>
         </ul>
       </div>
@@ -626,6 +626,7 @@ SLIDES_HTML = """<!DOCTYPE html>
         <ul>
           <li>A pilot on masked data</li>
           <li>Bind each figure to its claim</li>
+          <li>An embedding screen for reworded attacks, as the graders suggested</li>
           <li>Let a model read the org and team from the request, checked against the partner's scope</li>
         </ul>
       </div>
