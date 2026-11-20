@@ -7,6 +7,7 @@ The files behind Section 7 of the final report, `checkpoints/checkpoint_7_1.md`.
 | `scorecard.json` | Every count, section by section | `python3 -m src.evaluation.scorecard --write` |
 | `scorecard.md` | The same counts in sentences, plus timing and limits | Written with the JSON |
 | `live_writer_*.json` | One file per run with a real model writing the summary | `python3 -m src.evaluation.live_writer --provider auto --save experiments/final_evaluation/live_writer_NAME.json` |
+| `live_writer_run1.json` | The run of Nov 18, 2026: 23 requests with `gemini-3.5-flash-lite` writing the summary. The scorecard reads it | Recorded once and kept as it is |
 
 ## Check the scorecard
 
@@ -22,9 +23,9 @@ The command recomputes every result with no network, prints one line per area an
 2. `one_agent_or_squad`. Does composing teams under one budget beat pricing each team alone? No model runs here. Both sides call the same tools.
 3. `retrieval`. Does retrieval find the right clause for the right population? Keyword, dense and hybrid search on 28 questions, and one query per side on 12 comparisons. The embedding scores replay from `experiments/policy_retrieval`.
 4. `planning`. Does the beam find what an exhaustive search finds? Beam widths 1 to 4 against all 32 plans per team, and per-team beams against 1,024 and 32,768 joint plans.
-5. `guardrails`. Do the guardrails stop what they should and nothing else? The request screen on 136 frozen cases, 163 faults seeded into verified briefs, 7 trace faults and 9 invalid approvals.
-6. `routing`. Where does each request end, and how often does a person have to look? 4 org briefs, 16 cohort briefs and 3 policy questions.
-7. `model_prose`. Can a model's paragraph change a figure or a route? Two stand-in models take the place of the HTTP call. One copies the facts, and one adds a figure on every try.
+5. `guardrails`. Do the guardrails stop what they should and nothing else? The request screen on 136 frozen cases, 163 faults seeded into verified briefs, 8 trace faults and 9 invalid approvals. `shared_state` counts the final states and stored files that name an employee, which must be none.
+6. `routing`. Where does each request end, how often does a person have to look, and which signals sent those briefs to a person? 4 org briefs, 16 cohort briefs and 3 policy questions.
+7. `model_prose`. Can a model's paragraph change a figure or a route? Two stand-in models take the place of the HTTP call. One copies the facts, and one adds a figure on every try. `recorded_run` counts the saved run with a real model and replays its drafts with no model: each accepted draft must still pass, and each rejected draft must still fail.
 8. `timing`. What do the controls cost in time?
 
 ## Run the model check

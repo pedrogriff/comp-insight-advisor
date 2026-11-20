@@ -45,7 +45,9 @@ FAST_TOOL_MODEL = "google/gemini-2.5-flash"
 REASONING_SYNTHESIS_MODEL = "google/gemini-2.5-pro"
 
 GEMINI_FAST_MODEL = "gemini-2.5-flash"
-GEMINI_REASONING_MODEL = "gemini-2.5-pro"
+# The run recorded on Nov 18, 2026 used this model for the summary: a small model is enough when
+# code supplies every fact. experiments/final_evaluation/live_writer_run1.json holds its drafts.
+GEMINI_REASONING_MODEL = "gemini-3.5-flash-lite"
 
 OPENAI_FAST_MODEL = "gpt-4.1-mini"
 OPENAI_REASONING_MODEL = "gpt-4.1"

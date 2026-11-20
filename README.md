@@ -10,7 +10,29 @@ The current architecture diagram is in the final report, [checkpoint 7.1](checkp
 
 ## Review in five minutes
 
-The final report is [checkpoints/checkpoint_7_1.md](checkpoints/checkpoint_7_1.md), with a PDF and the presentation slides next to it. Four commands show the system from a fresh clone. The first two need only Python 3.12 or newer.
+The final report is [checkpoints/checkpoint_7_1.md](checkpoints/checkpoint_7_1.md), with a PDF and the presentation slides next to it.
+
+**Read on GitHub, with nothing installed.**
+
+1. [The final report](checkpoints/checkpoint_7_1.md), with the architecture diagram at the top.
+2. [The scorecard](experiments/final_evaluation/scorecard.md), which states every result the report and the slides quote.
+3. [Three requests and what came back](experiments/final_evaluation/sample_outputs.md): a costed brief with its approval record, a policy comparison and a refusal.
+4. [The recorded model run](experiments/final_evaluation/live_writer_run1.json): 23 requests with `gemini-3.5-flash-lite` writing the summary, with every draft and the reason for the one rejection.
+
+**Where each part of the presentation video lives in the code.**
+
+| In the video | Code |
+| :--- | :--- |
+| Org brief and joint plan | `src/agents/coordinator.py`, `src/planning/`, `src/tools/` |
+| The model's summary and its fact check | `src/models/router.py`, `check_model_prose` in `src/guardrails/output_guard.py` |
+| Approval gate and queue | `src/guardrails/approval.py`, `src/guardrails/pipeline.py` |
+| Policy comparison | `src/retrieval/cross_lever.py`, `src/retrieval/policy_search.py` |
+| Two refusals | `src/guardrails/input_guard.py` |
+| Invented figure and the held run | `deterministic_verify_brief` in `src/agents/state.py`, `src/guardrails/monitor.py` |
+| Console | `src/app.py` |
+| Evaluation results | `src/evaluation/scorecard.py`, `experiments/final_evaluation/` |
+
+**Run it.** Four commands show the system from a fresh clone. The first two need only Python 3.12 or newer.
 
 ```bash
 python3 -m unittest discover -s tests                    # the tests, no network
@@ -19,7 +41,7 @@ pip install -r requirements.txt && python3 -m src.app    # the console at http:/
 python3 -m src.guardrails.pipeline run VP_CLOUD_AI       # one guarded brief on the command line
 ```
 
-Without an API key, code writes the whole brief. With a key in `.env`, a model writes the summary paragraph, and `python3 -m src.evaluation.live_writer --provider auto` shows what the checks did with each of its drafts. [experiments/final_evaluation](experiments/final_evaluation/README.md) explains the scorecard, and [sample_outputs.md](experiments/final_evaluation/sample_outputs.md) shows three requests with what came back.
+With a key in `.env`, a model writes the summary paragraph, and `python3 -m src.evaluation.live_writer --provider auto` shows what the checks did with each of its drafts. Without a key, code writes that paragraph, so all four commands run either way. [experiments/final_evaluation](experiments/final_evaluation/README.md) explains the scorecard, and [sample_outputs.md](experiments/final_evaluation/sample_outputs.md) shows three requests with what came back.
 
 ## Architecture
 
@@ -27,7 +49,7 @@ One request passes a screen, five nodes and a set of checks, and ends in one of 
 
 1. **G1, the request screen.** It checks the playbook's hash and refuses prompt injection, questions about one person's pay, protected attributes, write orders and orgs outside the partner's scope, before any tool or model runs.
 2. **The squad.** Five nodes run as a LangGraph `StateGraph` and pass typed state: a supervisor, a proactive strategist and a reactive analyst in parallel, an executive synthesizer and a governance reviewer. Each node holds at most 3 of the 12 tools, and the tools open the database read-only.
-3. **The model.** One optional call writes the summary paragraph. Code holds each draft to the facts the model was given, and after two rejected tries the brief keeps the code-written paragraph.
+3. **The model.** One call writes the summary paragraph, because wording is the one step with no exact answer. Code holds each draft to the facts the model was given, and after two rejected tries the brief keeps the code-written paragraph. With no API key, code writes the paragraph.
 4. **G4 and the risk router.** The output check and the runtime monitor read the finished run. A cited policy answer or a brief with no spend is released, a costed brief waits at the approval gate, and any flag holds the run for a person.
 
 ## Status
@@ -37,12 +59,12 @@ Updated every Tuesday.
 | Checkpoint | What works | Code |
 | :--- | :--- | :--- |
 | 1.1 Problem framing | Design and architecture diagram | `checkpoints/checkpoint_1_1.md` |
-| 2.1 Reasoning, memory and tools | Design written, graded, and corrected on Oct 22. SQL tools return counts, averages and up to 15 flagged rows instead of the raw roster. The evidence check, partner memory and the new driver-fit check pass their tests | `checkpoints/checkpoint_2_1.md`, `src/tools/`, `src/memory/` |
+| 2.1 Reasoning, memory and tools | Design written, graded, and corrected on Oct 22. SQL tools return counts, averages and totals instead of the raw roster. The evidence check, partner memory and the new driver-fit check pass their tests | `checkpoints/checkpoint_2_1.md`, `src/tools/`, `src/memory/` |
 | 3.1 Policy retrieval | Design written and graded. The code cuts the playbook into 38 rules tagged by lever and population, and each lever in a brief gets its own filtered search. A check confirms that the limits the code applies appear in the retrieved clauses. On 24 test questions, keyword search finds the right clause for 11, dense search on `nomic-embed-text` for 24 and hybrid search for 23. Keyword search returns nothing for all 4 questions the playbook doesn't cover, and the embedding modes return nothing for 3. After grading, a router splits a question that spans levers, such as "Compare the equity caps for new hires versus current staff", into one filtered query per side. On 7 held-out comparisons, keyword search answers 5 of 11 sides that way against 0 with one query, and no clause lands under the wrong population | `checkpoints/checkpoint_3_1.md`, `src/retrieval/`, `docs/policies/`, `experiments/policy_retrieval/` |
 | 4.1 Tree-of-Thought planning | Design written and graded. A beam search, width 3 and depth up to 4, grows lever plans one decision at a time. Code checks every plan for eligibility, repeats, joint pricing, budget and sign-offs, and the planner returns three distinct options. On the three cohorts that pass the evidence check, its best plan inside the budget addresses 3 of 4, 7 of 7 and 4 of 5 departures, against 1 of 4, 6 of 7 and 3 of 5 for the template options. After grading, `beam_validation.py` checks width 3 against all 32 cohort plans and 105 budget thresholds, matching all 9 options and all 15 Pareto plans while cutting model calls by 67.7% | `checkpoints/checkpoint_4_1.md`, `src/planning/` |
 | 5.1 Multi-agent | Design written and submitted. Five specialists run in a state graph with at most 3 tools per node, parallel internal and market checks merged with `operator.add`, shared-budget composition in `plan_org_options`, and an independent Python verifier capped at 2 revisions. On `VP_CLOUD_AI`, one generalist agent prices standalone cohort plans at $3,246,000, $1,096,000 over the $2,150,000 budget, while the squad composes a $1,995,600 joint plan covering 7 of 11 departures and 16 of 16 declined offers | `checkpoints/checkpoint_5_1.md`, `src/agents/` |
 | 6.1 Guardrails and approval | Design written. The squad now compiles as a LangGraph `StateGraph` (`Send()`, `SqliteSaver`, `interrupt()`, `Command(resume=...)`) with a standard-library fallback. `GuardedAdvisor` screens requests (`0 of 50` false refusals across 4 splits, `40 of 48` on untouched `held_out_2`, `10 of 10` leaked violations contained downstream), opens roster SQLite read-only (`?mode=ro`), checks playbook SHA-256 integrity, rejects `158 of 163` seeded brief faults (`155 of 160` at submission, before the final evaluation added 3 policy-answer faults), flags `7 of 7` trace faults, routes `18 of 23` runs to `AUTO_RELEASE` and `5 of 23` (`21.7%`) to durable SQLite sign-off, logs a SHA-256 hash chain, and serves a three-tab Gradio console (`src/app.py`) | `checkpoints/checkpoint_6_1.md`, `src/guardrails/`, `src/agents/graph.py`, `src/models/router.py`, `src/app.py` |
-| 7.1 Final report and evaluation | Final report written, with eight presentation slides. One command reruns every evaluation and compares the counts with the committed scorecard, and a test holds every dollar figure, percentage and N-of-M count in the report and on the slides to that file. The final evaluation found that the reviewer skipped the numbers in a policy answer's prose, which goes out without a person. The reviewer now checks them. A model's summary paragraph is also held to the facts it was given: a draft that adds a number or a forbidden claim gets one retry, and after that the brief keeps the code-written paragraph. A stand-in model that invents a figure in every draft ended `23 of 23` runs on the code-written paragraph. `live_writer` runs the same requests with a real model | `checkpoints/checkpoint_7_1.md`, `src/evaluation/`, `experiments/final_evaluation/`, `scripts/generate_final_slides_pdf.py` |
+| 7.1 Final report and evaluation | Final report written, with eight presentation slides. One command reruns every evaluation and compares the counts with the committed scorecard, and a test holds every dollar figure, percentage and N-of-M count in the report and on the slides to that file. The final evaluation found that the reviewer skipped the numbers in a policy answer's prose, which goes out without a person. The reviewer now checks them. A model's summary paragraph is also held to the facts it was given: a draft that adds a number or a forbidden claim gets one retry, and after that the brief keeps the code-written paragraph. A stand-in model that invents a figure in every draft ended `23 of 23` runs on the code-written paragraph. In the recorded run with `gemini-3.5-flash-lite`, `22 of 23` runs ended on the model's first draft, the fact check rejected 1 draft that promised a guaranteed outcome, and the redraft passed. The last two grader comments are answered too. The roster scan had been passing rows with employee IDs into shared state, so tools now hand over counts only, the monitor holds any run whose state names an employee (`8 of 8` seeded trace faults flagged), and `0 of 23` final states do. The scorecard also counts what sent the 5 waiting briefs to a person | `checkpoints/checkpoint_7_1.md`, `src/evaluation/`, `experiments/final_evaluation/`, `scripts/generate_final_slides_pdf.py` |
 
 ## Quick start (Gradio UI and CLI)
 
@@ -53,9 +75,9 @@ python3 -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate, and python in place of python3
 pip install -r requirements.txt
 
-# Optional: copy .env.example to .env and paste OPENROUTER_API_KEY, GEMINI_API_KEY,
-# or OPENAI_API_KEY (or set OLLAMA_ENABLED=true with a local Ollama server).
-# Without any key, the advisor runs deterministically offline.
+# To have a model write the summary, copy .env.example to .env and paste OPENROUTER_API_KEY,
+# GEMINI_API_KEY or OPENAI_API_KEY (or set OLLAMA_ENABLED=true with a local Ollama server).
+# Without any key, code writes the summary and everything else runs the same.
 cp .env.example .env
 
 # Launch the three-tab Gradio console at http://127.0.0.1:7860
@@ -73,7 +95,7 @@ python3 -m src.evaluation.live_writer --provider auto
 
 - `data/synthetic/generate_synthetic_data.py` builds the dataset from a fixed seed. It writes 2,000 employees across 4 VP orgs, 350 offer and counter-offer events and 4 department budgets, as three CSV files and one SQLite database.
 - `src/tools/deterministic_analytics.py` holds the read-only SQLite tools (`?mode=ro`) the specialists call:
-  - `analyze_org_cliff_and_equity_health` counts employees whose cash flow drops by 15 percent or more from 2026 to 2027, with peer percentiles and governance flags.
+  - `analyze_org_cliff_and_equity_health` counts employees whose cash flow drops by 15 percent or more from 2026 to 2027, with peer percentiles and counts of governance flags by job family. No tool returns a row about one employee.
   - `analyze_reactive_offers_and_counters` summarizes offer acceptance, counter-offers and competitor premiums.
   - `simulate_proactive_retention_scenarios` prices three retention plans with a 4-tier sizing rubric and checks each one against the org's remaining budget. Tier 0 comes first, so nobody rated 1 or 2 gets a proactive grant.
 - `src/tools/evidence_check.py` holds `assess_retention_evidence`, which runs after the roster scan flags a job family. It treats roster counts as a census, puts a 95 percent interval on every rate or average from the offers log, labels the pattern, such as a cliff backed by market pressure or a cliff in a calm market, and rates the evidence strong, moderate or weak. Only a cliff backed by conclusive market pressure lets a brief cost retention spend.
@@ -96,14 +118,14 @@ python3 -m src.evaluation.live_writer --provider auto
 - `src/guardrails/` wraps the squad for checkpoint 6.1:
   - `integrity.py` checks `docs/policies/compensation_governance_playbook.md` against its SHA-256 manifest (`docs/policies/playbook_manifest.json`).
   - `input_guard.py` screens requests before any tool or model runs across 8 ordered rules (`empty`, `oversized`, `injection`, `protected_attribute`, `individual_pay`, `write_action`, `out_of_scope`, `unknown_scope`, and session `cross_org`).
-  - `output_guard.py` and `monitor.py` verify propositions beyond the figure checker (`EMP_` ID leaks, guaranteed outcomes, decision claims) and audit trajectory transitions and tool/message budgets. `check_model_prose` holds a paragraph a model wrote to the code-written facts it was given, so the model can reword a sentence but can't add a number.
-  - `approval.py`, `audit.py` and `pipeline.py` route runs across `AUTO_RELEASE`, `PARTNER_APPROVAL`, `EXECUTIVE_SIGN_OFF`, and `HOLD`, store waiting briefs in SQLite (`ApprovalStore`), and append SHA-256 hash-chained records to `AuditLog`. `evaluate.py` runs the full guardrail benchmark over `data/synthetic/guardrail_cases.json` (136 cases across 4 splits).
+  - `output_guard.py` and `monitor.py` verify propositions beyond the figure checker (`EMP_` ID leaks, guaranteed outcomes, decision claims) and audit trajectory transitions and tool/message budgets. The monitor also holds any run whose shared state names an employee. `check_model_prose` holds a paragraph a model wrote to the code-written facts it was given, so the model can reword a sentence but can't add a number.
+  - `approval.py`, `audit.py` and `pipeline.py` route runs across `AUTO_RELEASE`, `PARTNER_APPROVAL`, `EXECUTIVE_SIGN_OFF`, and `HOLD`, store waiting briefs in SQLite (`ApprovalStore`), and append SHA-256 hash-chained records to `AuditLog`. `python3 -m src.guardrails.pipeline triggers` counts which signals sent stored briefs to a person, most frequent first. `evaluate.py` runs the full guardrail benchmark over `data/synthetic/guardrail_cases.json` (136 cases across 4 splits).
 - `src/models/router.py` maps fast and reasoning roles to models on OpenRouter, the Google Gemini API, the OpenAI API or a local Ollama server. One step calls a model today, the summary paragraph. Each draft is checked against the facts, a rejected draft gets one retry, and after that the brief keeps the code-written paragraph. `ADVISOR_REASONING_MODEL` in `.env` swaps the model without a code change. With no key, code writes the paragraph. When a call fails, the call log keeps the provider's reason, and the brief keeps the code-written paragraph.
 - `src/evaluation/` is the final evaluation for checkpoint 7.1:
-  - `scorecard.py` reruns every offline evaluation, from the two recorded model baselines to the guardrails, and compares the counts with `experiments/final_evaluation/scorecard.json`. `--write` rewrites that file and `scorecard.md`.
+  - `scorecard.py` reruns every offline evaluation, from the two recorded model baselines to the guardrails, and compares the counts with `experiments/final_evaluation/scorecard.json`. It reads the recorded model run and checks its saved drafts again against today's checks. `--write` rewrites that file and `scorecard.md`.
   - `live_writer.py` runs the 23 requests with a real model writing the summary, next to a code-written run of each, and records every draft and why any was rejected. `--save` keeps the run and `--replay` checks a saved run against today's checks with no model.
 - `src/app.py` serves the three-tab Gradio partner console: quick-load demo presets, request & RBAC scope controls, expandable cited playbook clauses, bounded human approval decision card, durable SQLite pending/held queue, collapsible step trace & `Finding` inspector, and two-step preview-and-commit `PartnerMemory` controls. The status card names what wrote each summary, a model or code, and the trace lists every draft with the reason for any rejection.
-- `tests/` runs 232 checks (`226` run offline with zero packages; `6` live `LangGraphEngineTests` run when `langgraph` is installed): 5 for the SQL tools, 13 for the evidence check, 13 for partner memory, 18 for the driver-fit check, 2 for joint pricing, 15 for interview search, 9 for embeddings and the hybrid index, 17 for policy retrieval and grounded options, 18 for the cross-lever router, 12 for the Tree-of-Thought planner, 11 for beam validation and org composition, 7 for multi-agent coordination, 4 for state serialization, 10 for the LangGraph node wrappers and `StateGraph` engine, 24 for guardrails, approval gates and hash-chained audit logs, 6 for the model router and Gradio app controller, 23 for the final scorecard, the model fact check and the live writer check, 12 for the final report, its link and the slides, and 13 for the compa-ratio drift experiment.
+- `tests/` runs 238 checks (`232` run offline with zero packages; `6` live `LangGraphEngineTests` run when `langgraph` is installed): 5 for the SQL tools, 13 for the evidence check, 13 for partner memory, 18 for the driver-fit check, 2 for joint pricing, 15 for interview search, 9 for embeddings and the hybrid index, 17 for policy retrieval and grounded options, 18 for the cross-lever router, 12 for the Tree-of-Thought planner, 11 for beam validation and org composition, 7 for multi-agent coordination, 4 for state serialization, 10 for the LangGraph node wrappers and `StateGraph` engine, 26 for guardrails, approval gates, the shared-state check and hash-chained audit logs, 6 for the model router and Gradio app controller, 27 for the final scorecard, the model fact check, the live writer check and the recorded run, 12 for the final report, its link and the slides, and 13 for the compa-ratio drift experiment.
 - `docs/policies/compensation_governance_playbook.md` is the synthetic policy the agent retrieves from. Section 6 maps each loss driver to the lever that addresses it.
 - `checkpoints/` holds the written submissions. `scripts/generate_checkpoint_pdf.py` and `scripts/generate_checkpoint_2_1_pdf.py` through `scripts/generate_checkpoint_6_1_pdf.py` render the PDF copies of checkpoints 1.1 through 6.1 with Playwright. `scripts/generate_checkpoint_7_1_pdf.py` renders the final report and the one-page document with the video link, `scripts/set_submission_links.py` puts the video link into both, and `scripts/generate_final_slides_pdf.py` renders the eight presentation slides.
 
@@ -130,9 +152,11 @@ python3 -m src.agents.coordinator VP_CLOUD_AI
 python3 -m src.agents.coordinator --compare
 python3 -m src.guardrails.pipeline run VP_CLOUD_AI
 python3 -m src.guardrails.pipeline ask "How do equity caps differ for new hires versus current staff?"
+python3 -m src.guardrails.pipeline triggers
 python3 -m src.guardrails.evaluate
 python3 -m src.evaluation.scorecard
 python3 -m src.evaluation.live_writer --provider auto
+python3 -m src.evaluation.live_writer --replay experiments/final_evaluation/live_writer_run1.json
 python3 -m src.models.router --status
 python3 -m src.app --check
 python3 scripts/set_submission_links.py --check
