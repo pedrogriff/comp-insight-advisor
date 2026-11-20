@@ -35,8 +35,8 @@ from src.guardrails.input_guard import (
     load_scope,
     screen_request,
 )
-from src.guardrails.monitor import review_trajectory
-from src.guardrails.output_guard import check_brief, check_text
+from src.guardrails.monitor import identifiers_in_shared_state, review_trajectory
+from src.guardrails.output_guard import EMPLOYEE_ID_RE, check_brief, check_text
 from src.guardrails.pipeline import (
     AI_LABEL,
     AWAITING_APPROVAL,
@@ -52,7 +52,12 @@ from src.guardrails.pipeline import (
 from src.memory.partner_memory import PartnerMemory
 from src.retrieval.embeddings import make_embedder
 from src.retrieval.policy_search import PLAYBOOK_PATH, PolicyRetriever
-from src.tools.deterministic_analytics import DEFAULT_DB_PATH, connect_readonly
+from src.tools.deterministic_analytics import (
+    DEFAULT_DB_PATH,
+    analyze_org_cliff_and_equity_health,
+    connect_readonly,
+    flag_kind,
+)
 from src.tools.interview_search import NoteIndex, load_notes
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -196,6 +201,23 @@ class ToolAccessTests(_Fixtures):
         self.assertEqual(ok.status, "APPROVED")
         self.assertEqual(ok.allowed_orgs, ("VP_CLOUD_AI",))
 
+    def test_roster_scan_hands_over_counts_never_rows(self) -> None:
+        # The Checkpoint 5.1 feedback asked how pay data is protected in shared state. The scan used to
+        # return up to 15 flagged rows with employee IDs and each person's cash flow, which no agent read.
+        self.assertEqual(flag_kind("2027 Manager Inversion vs EMP10504"), "2027 Manager Inversion")
+        with closing(connect_readonly(DEFAULT_DB_PATH)) as conn:
+            flagged = dict(conn.execute(
+                "SELECT vp_org_code, COUNT(*) FROM org_roster_cashflows WHERE governance_flag != 'Clean' GROUP BY 1"
+            ).fetchall())
+        self.assertEqual(sum(flagged.values()), 25)
+        for org in self.scope:
+            scan = analyze_org_cliff_and_equity_health(org)
+            self.assertNotIn("governance_alerts", scan)
+            self.assertIsNone(EMPLOYEE_ID_RE.search(json.dumps(scan)), org)
+            counts = scan["governance_alert_counts"]
+            self.assertEqual(sum(row["employees"] for row in counts), flagged[org], org)
+            self.assertTrue(all(set(row) == {"job_family", "flag", "employees"} for row in counts))
+
 
 class VerifierAndOutputTests(_Fixtures):
     def test_brief_without_spend_is_verified_not_held(self) -> None:
@@ -260,6 +282,26 @@ class VerifierAndOutputTests(_Fixtures):
         kinds = {flag.split(":", 1)[0] for flag in flags}
         self.assertEqual(kinds, {"tool_outside_scope", "duplicate_tool_call", "revision_cap_exceeded",
                                  "unexpected_transition", "released_without_review"})
+
+    def test_a_state_that_names_an_employee_is_held(self) -> None:
+        coord = self._coordinator()
+        state = coord.run(ORG_QUESTION, vp_org_code="VP_CLOUD_AI", thread_id="rows")
+        order = [snap.node for snap in coord.checkpointer.history("rows")]
+        self.assertEqual(identifiers_in_shared_state(state), 0)
+
+        leaked = copy.deepcopy(state)
+        leaked.findings[0].payload["flagged_rows"] = [{"employee_id": "EMP10254", "intended_cashflow_2027_usd": 412000}]
+        leaked.messages.append("reactive_analyst: the largest case is EMP10311")
+        flags = review_trajectory(leaked, order)
+        self.assertEqual([flag.split(":", 1)[0] for flag in flags], ["individual_data_in_state"])
+        self.assertIn("2 employee or offer identifier(s)", flags[0])
+        self.assertNotIn("EMP1", flags[0])  # the flag goes into the audit log, so it never repeats the ID
+        self.assertEqual(assess_risk(leaked, monitor_flags=flags).route, ROUTE_HOLD)
+
+        # The partner's own request is not something an agent passed on, and the draft is the output check's job.
+        asked = copy.deepcopy(state)
+        asked.question = "Is EMP10254 in this cohort?"
+        self.assertEqual(review_trajectory(asked, order), ())
 
 
 class IntegrityAndAuditTests(unittest.TestCase):
@@ -513,6 +555,13 @@ class GuardedAdvisorTests(_Fixtures):
         self.assertIn("[RELEASED]", text)
         code, text = run_cli("pending")
         self.assertIn("0 brief(s) waiting", text)
+        code, text = run_cli("triggers")
+        self.assertEqual(code, 0)
+        self.assertIn("1 brief(s) reached a person", text)
+        self.assertRegex(text, r"(?m)^ +1  tier3_grant$")
+        self.assertEqual(GuardedAdvisor(runtime_dir=self.runtime).store.summary()["review_triggers"], {
+            "costed_options": 1, "ledger_reconciliation_flag": 1, "level_decision": 1, "over_remaining_budget": 1,
+            "thin_evidence": 1, "tier3_grant": 1})
         code, text = run_cli("verify-log")
         self.assertEqual(code, 0)
         self.assertIn("chain ok: True", text)
@@ -563,8 +612,17 @@ class ScorecardTests(unittest.TestCase):
         })
         self.assertEqual((r["requests"], r["released_without_a_person"], r["needs_a_person"], r["held"]),
                          (23, 18, 5, 0))
+        # What sent the 5 waiting briefs to a person, most frequent first. The Checkpoint 6.1 feedback asked for it.
+        self.assertEqual(r["review_triggers"], [
+            ["costed_options", 5], ["ledger_reconciliation_flag", 5], ["tier3_grant", 5],
+            ["level_decision", 4], ["over_remaining_budget", 4], ["thin_evidence", 2]])
+        # No final state and no file a run leaves behind names an employee.
+        self.assertEqual(r["states_naming_an_employee"], 0)
+        self.assertEqual(r["stores_checked"], ["approvals.sqlite", "audit.jsonl", "checkpoints.sqlite"])
+        self.assertEqual(r["stores_naming_an_employee"], [])
         m = self.report["monitor"]
-        self.assertEqual((m["clean_run_flags"], m["seeded_faults"], m["faults_flagged"]), (0, 7, 7))
+        self.assertEqual((m["clean_run_flags"], m["seeded_faults"], m["faults_flagged"]), (0, 8, 8))
+        self.assertTrue(m["by_fault"]["individual_data_in_state"])
         g = self.report["gate"]
         self.assertEqual((g["invalid_decisions"], g["invalid_decisions_refused"]), (9, 9))
         self.assertTrue(g["pending_survived_restart"] and g["valid_approval_released"])

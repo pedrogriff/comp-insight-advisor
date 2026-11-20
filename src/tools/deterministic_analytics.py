@@ -3,10 +3,16 @@
 Designed so smaller or Flash-tier LLMs never perform spreadsheet math in token
 space. Every function queries the synthetic SQLite database and returns a
 compact, pre-verified JSON-serializable dictionary with explicit risk flags.
+
+Every result is cohort level. A tool reads rows and returns counts, averages and
+totals, so no employee ID and no single person's pay enters the state the agents
+share, the checkpoints or the approval queue.
 """
 
+from collections import Counter
 from contextlib import closing
 from pathlib import Path
+import re
 import sqlite3
 from typing import Any
 
@@ -27,6 +33,14 @@ def connect_readonly(db_path: Path | str) -> sqlite3.Connection:
     and a missing file raises an error instead of leaving an empty database behind.
     """
     return sqlite3.connect(f"{Path(db_path).resolve().as_uri()}?mode=ro", uri=True)
+
+
+_EMPLOYEE_ID = re.compile(r"\bEMP[_-]?\d+\b")
+
+
+def flag_kind(flag: str) -> str:
+    """A governance flag without the employee it points at, so its count can leave the tool."""
+    return re.sub(r"\s+vs\s*$", "", _EMPLOYEE_ID.sub("", flag)).strip()
 
 
 def analyze_org_cliff_and_equity_health(
@@ -75,19 +89,22 @@ def analyze_org_cliff_and_equity_health(
         )
         family_breakdown = [dict(r) for r in cur.fetchall()]
 
-        # Specific governance anomalies (inversions and stale promo bands)
+        # Governance anomalies (inversions, stale promo bands, expiring grants), counted by job family
+        # and kind. Until the Checkpoint 5.1 feedback this returned up to 15 rows with employee IDs and
+        # each person's cash flow. No agent read them, and they traveled in shared state.
         cur.execute(
             """
-            SELECT employee_id, job_family, job_level, manager_id,
-                   intended_cashflow_2026_usd, intended_cashflow_2027_usd,
-                   governance_flag
+            SELECT job_family, governance_flag
             FROM org_roster_cashflows
             WHERE vp_org_code = ? AND governance_flag != 'Clean'
-            LIMIT 15
             """,
             (vp_org_code,),
         )
-        governance_alerts = [dict(r) for r in cur.fetchall()]
+        alert_counts = Counter((r["job_family"], flag_kind(r["governance_flag"])) for r in cur.fetchall())
+        governance_alert_counts = [
+            {"job_family": family, "flag": kind, "employees": employees}
+            for (family, kind), employees in sorted(alert_counts.items(), key=lambda item: (-item[1], item[0]))
+        ]
 
         # Budget status
         cur.execute(
@@ -103,7 +120,7 @@ def analyze_org_cliff_and_equity_health(
         "vp_org_code": vp_org_code,
         "org_summary": summary,
         "job_family_breakdown": family_breakdown,
-        "governance_alerts": governance_alerts,
+        "governance_alert_counts": governance_alert_counts,
         "budget_status": budget_status,
     }
 

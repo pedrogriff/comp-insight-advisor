@@ -387,7 +387,11 @@ class ApprovalStore:
         return self.get(thread_id)
 
     def summary(self) -> dict[str, Any]:
-        """Counts by status, route and override reason, for the feedback loop."""
+        """Counts by status, route, review trigger and override reason, for the feedback loop.
+
+        review_triggers counts how many stored briefs each signal sent to a person, most frequent
+        first. The signal on top is the rule or the data problem to look at first.
+        """
         with closing(self._connect()) as conn:
             by_status = dict(conn.execute("SELECT status, COUNT(*) FROM approval_requests GROUP BY 1").fetchall())
             by_route = dict(conn.execute("SELECT route, COUNT(*) FROM approval_requests GROUP BY 1").fetchall())
@@ -396,12 +400,18 @@ class ApprovalStore:
                     "SELECT reason_code, COUNT(*) FROM approval_decisions WHERE decision != 'approve' GROUP BY 1"
                 ).fetchall()
             )
+            reasons = [json.loads(row[0]) for row in conn.execute("SELECT reasons_json FROM approval_requests")]
+        triggers: dict[str, int] = {}
+        for signals in reasons:
+            for signal in signals:
+                triggers[signal] = triggers.get(signal, 0) + 1
         decided = sum(v for k, v in by_status.items() if k != "PENDING")
         overrides = by_status.get("REJECTED", 0) + by_status.get("CHANGES_REQUESTED", 0)
         return {
             "requests": sum(by_status.values()),
             "by_status": by_status,
             "by_route": by_route,
+            "review_triggers": dict(sorted(triggers.items(), key=lambda item: (-item[1], item[0]))),
             "override_reasons": by_reason,
             "override_rate": round(overrides / decided, 3) if decided else None,
         }

@@ -21,6 +21,7 @@ From the repo root:
     python3 -m src.guardrails.pipeline run VP_ENT_APPS
     python3 -m src.guardrails.pipeline ask "How do equity caps differ for new hires versus current staff?"
     python3 -m src.guardrails.pipeline pending
+    python3 -m src.guardrails.pipeline triggers
     python3 -m src.guardrails.pipeline approve THREAD --option 1 --ack "VP" --ack "Head of Compensation"
     python3 -m src.guardrails.pipeline reject THREAD --reason data_looks_wrong
     python3 -m src.guardrails.pipeline trace THREAD
@@ -421,6 +422,7 @@ def main(argv: list[str] | None = None) -> int:
     ask_p.add_argument("--org", default=None)
 
     sub.add_parser("pending", help="list briefs waiting for a person")
+    sub.add_parser("triggers", help="count what sent briefs to a person and why reviewers sent them back")
 
     for name, text in (("approve", "release a waiting brief"), ("reject", "discard a waiting brief"),
                        ("changes", "send a waiting brief back")):
@@ -450,6 +452,15 @@ def main(argv: list[str] | None = None) -> int:
         print(f"{len(rows)} brief(s) waiting")
         for row in rows:
             print(f"  {row['thread_id']}  {row['scope']:28s} {row['route']:18s} {', '.join(row['reasons'])}")
+    elif args.command == "triggers":
+        counts = advisor.store.summary()
+        print(f"{counts['requests']} brief(s) reached a person")
+        for signal, count in counts["review_triggers"].items():
+            print(f"  {count:4d}  {signal}")
+        if counts["override_reasons"]:
+            print("Sent back or rejected, by reason code")
+            for reason, count in sorted(counts["override_reasons"].items(), key=lambda item: (-item[1], item[0])):
+                print(f"  {count:4d}  {reason}")
     elif args.command in ("approve", "reject", "changes"):
         decision = {"approve": "approve", "reject": "reject", "changes": "request_changes"}[args.command]
         try:

@@ -7,9 +7,12 @@ Eight questions, each answered by a count on cases with a known right answer:
 2. Does the squad beat one agent that holds every tool? One org, one shared budget.
 3. Does retrieval find the right clause for the right population?
 4. Does the beam find what an exhaustive search finds?
-5. Do the guardrails stop what they should and nothing else?
-6. Where does each request end, and how often does a person have to look?
-7. Can a model's paragraph change a figure or a route? Stand-in models, no network.
+5. Do the guardrails stop what they should and nothing else? This includes whether the
+   state the agents share, or any file a run leaves behind, names an employee.
+6. Where does each request end, how often does a person have to look, and which
+   signals sent those briefs to a person?
+7. Can a model's paragraph change a figure or a route? Stand-in models with no network,
+   and one saved run with a real model, checked again against today's checks.
 8. What do the controls cost in time? Timing changes from machine to machine, so
    it sits apart and no test compares it.
 
@@ -46,6 +49,23 @@ SAVED_SCORES = PROJECT_ROOT / "experiments" / "policy_retrieval" / "nomic-embed-
 SAVED_ROUTER_SCORES = PROJECT_ROOT / "experiments" / "policy_retrieval" / "nomic-embed-text-router.json"
 ROWS_EXPERIMENT = PROJECT_ROOT / "experiments" / "rows_vs_summary"
 DRIFT_EXPERIMENT = PROJECT_ROOT / "experiments" / "compa_ratio_drift"
+RECORDED_RUN = OUT_DIR / "live_writer_run1.json"
+# How the report names each signal that sends a brief to a person. Every costed brief carries
+# costed_options, so that one says nothing about which rule fired.
+SIGNAL_NAMES = {
+    "ledger_reconciliation_flag": "an unreconciled budget ledger",
+    "tier3_grant": "a Tier 3 grant",
+    "level_decision": "a level decision",
+    "over_remaining_budget": "an option over the remaining budget",
+    "thin_evidence": "thin evidence",
+    "policy_conflict": "a policy conflict",
+}
+REJECTION_NAMES = {
+    "new_figure": "a number the facts do not hold",
+    "unsupported_certainty": "a promised outcome",
+    "decision_claim": "a decision claim",
+    "employee_identifier": "an employee ID",
+}
 VOLATILE = ("timing",)
 SPLITS = {"dev": "tuning", "heldout": "held_out"}
 
@@ -286,6 +306,13 @@ def guardrails(report: dict[str, Any]) -> dict[str, Any]:
             "trace_faults_seeded": monitor["seeded_faults"],
             "trace_faults_flagged": monitor["faults_flagged"],
         },
+        "shared_state": {
+            "question": "Does the state the agents share, or a file a run leaves behind, name an employee?",
+            "runs": report["routing"]["requests"],
+            "final_states_naming_an_employee": report["routing"]["states_naming_an_employee"],
+            "stores_checked": report["routing"]["stores_checked"],
+            "stores_naming_an_employee": report["routing"]["stores_naming_an_employee"],
+        },
         "approval_gate": {
             "invalid_decisions": gate["invalid_decisions"],
             "invalid_decisions_refused": gate["invalid_decisions_refused"],
@@ -307,11 +334,47 @@ def routing(report: dict[str, Any]) -> dict[str, Any]:
         "waited_for_a_person": row["needs_a_person"],
         "escalation_rate_pct": round(100 * row["escalation_rate"], 1),
         "held": row["held"],
+        "what_sent_briefs_to_a_person": {signal: count for signal, count in row["review_triggers"]},
+    }
+
+
+def recorded_run(path: Path = RECORDED_RUN) -> dict[str, Any] | None:
+    """A saved run with a real model writing the summary, counted from its rows and checked again today.
+
+    The replay rebuilds each request's facts with no model. Every draft the run accepted must still
+    pass the fact check, the verifier and the output check, and every draft it rejected must still fail.
+    """
+    if not path.exists():
+        return None
+    saved = json.loads(path.read_text(encoding="utf-8"))
+    summary, replay = live_writer.summarize(saved["runs"]), live_writer.reverify(saved)
+    return {
+        "file": path.name,
+        "provider": saved["provider"],
+        "model": saved["model"],
+        "recorded_on": saved["recorded_on"],
+        "runs": summary["runs"],
+        "model_calls": summary["model_calls"],
+        "first_draft_accepted": summary["model_first_draft_verified"],
+        "redraft_accepted": summary["model_redraft_verified"],
+        "ended_on_the_code_written_paragraph": summary["code_written_after_rejection"]
+        + summary["code_written_after_error"],
+        "model_errors": summary["code_written_after_error"],
+        "not_verified": summary["not_verified"],
+        "same_route_as_the_code_written_run": summary["same_end_as_code_written"],
+        "drafts_rejected_by_kind": summary["rejected_issue_kinds"],
+        "replay": {
+            "accepted_drafts": replay["accepted_checked"],
+            "still_pass": replay["accepted_still_pass"],
+            "rejected_drafts": replay["rejected_checked"],
+            "still_fail": replay["rejected_still_fail"],
+            "changed": replay["changed"],
+        },
     }
 
 
 def model_prose() -> dict[str, Any]:
-    """What the checks do with a model's paragraph, shown with stand-in models and no network."""
+    """What the checks do with a model's paragraph: stand-in models with no network, and one saved run."""
     out: dict[str, Any] = {"question": "Can a model's paragraph change a figure or a route?"}
     for name, transport in live_writer.STAND_INS.items():
         summary = live_writer.run("ollama", transport=transport, env_path=None)["summary"]
@@ -324,7 +387,10 @@ def model_prose() -> dict[str, Any]:
             "same_route_as_the_code_written_run": summary["same_end_as_code_written"],
         }
     out["note"] = ("Stand-in models take the place of the HTTP call. python3 -m src.evaluation.live_writer "
-                   "runs the same requests with a real model.")
+                   "runs the same requests with a real model, and recorded_run reads the run it saved.")
+    saved = recorded_run()
+    if saved is not None:
+        out["recorded_run"] = saved
     return out
 
 
@@ -402,6 +468,13 @@ def headline(card: dict[str, Any]) -> list[tuple[str, str]]:
     contain, check = guard["containment"], guard["verifier_and_output_check"]
     monitor, gate = guard["runtime_monitor"], guard["approval_gate"]
     copies, invents = card["model_prose"]["copies_the_facts"], card["model_prose"]["invents_a_figure"]
+    shared, live = guard["shared_state"], card["model_prose"].get("recorded_run")
+    waited = route["waited_for_a_person"]
+    signals = [f"{SIGNAL_NAMES[name]} in {count} of {waited}"
+               for name, count in route["what_sent_briefs_to_a_person"].items() if name in SIGNAL_NAMES]
+    signal_note = (f" Of the {waited} that waited, the signals were {', '.join(signals[:-1])} and {signals[-1]}."
+                   if len(signals) > 1 else (f" Of the {waited} that waited, the signal was {signals[0]}."
+                                             if signals else ""))
     uncovered = _pair(policy["keyword"]["returned_nothing_when_uncovered"]["all"])[1]
     missed_kinds = sorted({miss.split(" on ")[0] for miss in check["missed"]})
     missed_note = (
@@ -473,17 +546,47 @@ def headline(card: dict[str, Any]) -> list[tuple[str, str]]:
          f"The monitor flagged {monitor['trace_faults_flagged']} of {monitor['trace_faults_seeded']} seeded trace "
          f"faults, and the gate refused {gate['invalid_decisions_refused']} of {gate['invalid_decisions']} invalid "
          "decisions."),
+        ("Shared state",
+         f"{shared['final_states_naming_an_employee']} of {shared['runs']} final states name an employee, and "
+         f"{len(shared['stores_naming_an_employee'])} of {len(shared['stores_checked'])} stores a run writes do: "
+         "the checkpoints, the approval queue and the audit log. Tools hand over counts, averages and totals."),
         ("Routing",
          f"{route['released_without_a_person']} of {route['requests']} requests were released without a person "
          f"and {route['waited_for_a_person']} of {route['requests']} waited for sign-off, "
-         f"{route['escalation_rate_pct']}%. {route['held']} of {route['requests']} were held."),
-        ("A model's paragraph",
+         f"{route['escalation_rate_pct']}%. {route['held']} of {route['requests']} were held.{signal_note}"),
+        ("A model's paragraph, stand-in models",
          f"A stand-in model that copies the facts had {copies['first_draft_accepted']} of {copies['runs']} first "
          f"drafts accepted. One that invents a figure in every draft ended "
          f"{invents['ended_on_the_code_written_paragraph']} of {invents['runs']} runs on the code-written "
          f"paragraph, and {invents['same_route_as_the_code_written_run']} of {invents['runs']} kept the route of "
          "the code-written run."),
-    ]
+    ] + ([("A model's paragraph, recorded run", _recorded_run_sentence(live))] if live else [])
+
+
+def _recorded_run_sentence(live: dict[str, Any]) -> str:
+    runs = live["runs"]
+    by_kind = live["drafts_rejected_by_kind"]
+    rejected = sum(by_kind.values())
+    if rejected == 0:
+        rejected_note = " The fact check rejected no draft."
+    elif rejected == 1:
+        rejected_note = f" The fact check rejected 1 draft, for {REJECTION_NAMES.get(next(iter(by_kind)), next(iter(by_kind)))}."
+    else:
+        kinds = ", ".join(f"{count} for {REJECTION_NAMES.get(kind, kind)}" for kind, count in by_kind.items())
+        rejected_note = f" The fact check rejected {rejected} drafts: {kinds}."
+    replay = live["replay"]
+    still_fail = ""
+    if replay["rejected_drafts"]:
+        still_fail = (f" and {replay['still_fail']} of {replay['rejected_drafts']} rejected "
+                      + ("draft still fails" if replay["rejected_drafts"] == 1 else "drafts still fail"))
+    return (
+        f"With `{live['model']}` writing the summary on {live['recorded_on']}, {live['first_draft_accepted']} of "
+        f"{runs} runs ended on the model's first draft, {live['redraft_accepted']} of {runs} on its redraft and "
+        f"{live['ended_on_the_code_written_paragraph']} of {runs} on the code-written paragraph.{rejected_note} "
+        f"{live['same_route_as_the_code_written_run']} of {runs} runs ended on the route of the code-written run. "
+        f"Replayed against today's checks with no model, {replay['still_pass']} of {replay['accepted_drafts']} "
+        f"accepted drafts still pass{still_fail}."
+    )
 
 
 def limits(card: dict[str, Any]) -> list[str]:
@@ -498,8 +601,11 @@ def limits(card: dict[str, Any]) -> list[str]:
         "No compensation partner has used the advisor, so nothing here measures whether a brief helps a decision.",
         f"The two model baselines are {counting_runs} runs on one model and {dividing_runs} runs on another. "
         "They show that the failure exists, not how often it happens across models.",
-        "A model's paragraph appears here only through stand-in models. `python3 -m src.evaluation.live_writer` "
-        "runs a real one, and its saved runs sit next to this file.",
+        "A model's paragraph appears here through stand-in models and one recorded run on one model. That run "
+        "shows what the checks did with that model's drafts on that day, not how another model writes. "
+        "`python3 -m src.evaluation.live_writer` records a new run.",
+        "The count of what sent briefs to a person covers the evaluation's requests. In use, "
+        "`python3 -m src.guardrails.pipeline triggers` counts the same signals over the stored queue.",
     ]
 
 
@@ -523,8 +629,9 @@ def render_markdown(card: dict[str, Any]) -> str:
         "# Final evaluation scorecard",
         "",
         "`python3 -m src.evaluation.scorecard --write` wrote this file from `scorecard.json`. Every count comes "
-        "from code run on the committed synthetic data. No model ran, apart from the two recorded baselines, "
-        "whose answers sit in `experiments/rows_vs_summary` and `experiments/compa_ratio_drift`.",
+        "from code run on the committed synthetic data. No model runs when the scorecard is built. Three recorded "
+        "model runs are read from their files: the two baselines in `experiments/rows_vs_summary` and "
+        "`experiments/compa_ratio_drift`, and the summary writer's run in `live_writer_run1.json`.",
         "",
         "| Area | Result |",
         "| :--- | :--- |",

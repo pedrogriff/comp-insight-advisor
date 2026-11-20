@@ -15,13 +15,18 @@ Flags:
 - unexpected_transition: the node order breaks the graph's edges.
 - released_without_review: a brief is marked verified with no passing review.
 - errors_recorded: a specialist reported an error.
+- individual_data_in_state: the state the agents share names an employee. The
+  tools hand over counts, averages and totals, so this never happens in a
+  correct run. The flag gives a count and never repeats the identifier.
 """
 
 from __future__ import annotations
 
 import json
 
+from src.agents import serialization
 from src.agents.state import AGENT_TOOL_SCOPES, MAX_RETRIEVAL_ATTEMPTS, SquadState
+from src.guardrails.output_guard import EMPLOYEE_ID_RE
 
 # The largest measured run, the VP_CLOUD_AI org brief, makes 22 tool calls and writes 7 messages.
 MAX_TOOL_CALLS = 40
@@ -39,9 +44,25 @@ ALLOWED_TRANSITIONS: dict[str, tuple[str, ...]] = {
 }
 
 
+def identifiers_in_shared_state(state: SquadState) -> int:
+    """Counts employee and offer IDs in everything the agents pass on, apart from the partner's own request.
+
+    The draft and the released text are left to the output check, which names the problem for the writer.
+    """
+    shared = serialization.encode(state)["fields"]
+    for field in ("question", "draft", "review", "final_output"):
+        shared.pop(field, None)
+    return len(EMPLOYEE_ID_RE.findall(json.dumps(shared, default=str)))
+
+
 def review_trajectory(state: SquadState, node_order: list[str] | None = None) -> tuple[str, ...]:
     """Returns the monitor's flags for one finished run, or an empty tuple."""
     flags: list[str] = []
+
+    named = identifiers_in_shared_state(state)
+    if named:
+        flags.append(f"individual_data_in_state: {named} employee or offer identifier(s) in shared state, "
+                     "and agents pass cohort figures only")
 
     seen: dict[tuple[str, str, str], int] = {}
     for call in state.tool_calls:

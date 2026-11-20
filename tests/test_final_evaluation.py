@@ -1,7 +1,8 @@
 """Tests for the final evaluation: the scorecard, the model fact check and the live writer check.
 
 No test here reaches a model. A fake transport plays the model, so each test names exactly what
-the model wrote and checks what the advisor did with it.
+the model wrote and checks what the advisor did with it. The one run recorded with a real model is
+read from its file, and its drafts are checked again against today's checks.
 """
 
 from __future__ import annotations
@@ -118,6 +119,14 @@ class ScorecardTests(unittest.TestCase):
         self.assertEqual((check["faults_rejected"], check["faults_seeded"], len(FAULTS)), (158, 163, 15))
         self.assertEqual((card["routing"]["requests"], card["routing"]["released_without_a_person"],
                           card["routing"]["waited_for_a_person"], card["routing"]["held"]), (23, 18, 5, 0))
+        self.assertEqual(card["routing"]["what_sent_briefs_to_a_person"], {
+            "costed_options": 5, "ledger_reconciliation_flag": 5, "tier3_grant": 5, "level_decision": 4,
+            "over_remaining_budget": 4, "thin_evidence": 2})
+        shared = guard["shared_state"]
+        self.assertEqual((shared["final_states_naming_an_employee"], shared["runs"],
+                          shared["stores_naming_an_employee"], len(shared["stores_checked"])), (0, 23, [], 3))
+        self.assertEqual((guard["runtime_monitor"]["trace_faults_flagged"],
+                          guard["runtime_monitor"]["trace_faults_seeded"]), (8, 8))
 
         prose = card["model_prose"]
         self.assertEqual((prose["copies_the_facts"]["first_draft_accepted"], prose["copies_the_facts"]["runs"]),
@@ -127,12 +136,23 @@ class ScorecardTests(unittest.TestCase):
                           invents["same_route_as_the_code_written_run"], invents["first_draft_accepted"]),
                          (23, 0, 23, 0))
 
+        live = prose["recorded_run"]
+        self.assertEqual((live["model"], live["recorded_on"], live["runs"], live["model_calls"]),
+                         ("gemini-3.5-flash-lite", "2026-11-18", 23, 24))
+        self.assertEqual((live["first_draft_accepted"], live["redraft_accepted"],
+                          live["ended_on_the_code_written_paragraph"], live["model_errors"], live["not_verified"],
+                          live["same_route_as_the_code_written_run"]), (22, 1, 0, 0, 0, 23))
+        self.assertEqual(live["drafts_rejected_by_kind"], {"unsupported_certainty": 1})
+        self.assertEqual(live["replay"], {"accepted_drafts": 23, "still_pass": 23, "rejected_drafts": 1,
+                                          "still_fail": 1, "changed": []})
+
     def test_quotable_figures_come_from_the_headline(self) -> None:
         self.assertEqual(scorecard.figures("at $3,246,000, $1,096,000 over; 85 of 1,024 plans, 67.7% fewer."),
                          {"$3,246,000", "$1,096,000", "85 of 1,024", "67.7%"})
         quotable = scorecard.quotable(self.card)
         for figure in ("0 of 5", "297 of 300", "$1,995,600", "24 of 24", "9 of 11", "105 of 105", "67.7%",
-                       "0 of 50", "40 of 48", "10 of 10", "158 of 163", "9 of 9", "5 of 23", "18 of 23", "21.7%"):
+                       "0 of 50", "40 of 48", "10 of 10", "158 of 163", "9 of 9", "5 of 23", "18 of 23", "21.7%",
+                       "8 of 8", "0 of 3", "5 of 5", "22 of 23", "1 of 23", "1 of 1"):
             self.assertIn(figure, quotable)
 
     def test_answer_numbers_skip_percentages_names_and_decimals(self) -> None:
@@ -273,6 +293,40 @@ class RouterFactCheckTests(unittest.TestCase):
             ModelRouter._http_json_post("https://example.invalid/v1/chat/completions", {}, {"model": "x"}, 1.0)
         self.assertEqual(str(caught.exception), 'HTTP 404 from the provider: {"error": {"message": '
                                                 '"model vendor/retired-model is not available"}}')
+
+
+class RecordedRunTests(unittest.TestCase):
+    """The run saved on Nov 18, 2026 with a real model writing the summary. No model runs here."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.saved = json.loads(scorecard.RECORDED_RUN.read_text(encoding="utf-8"))
+
+    def test_saved_summary_comes_from_its_own_rows(self) -> None:
+        self.assertEqual(live_writer.summarize(self.saved["runs"]), self.saved["summary"])
+        self.assertEqual((self.saved["provider"], self.saved["repeats"], len(self.saved["runs"])), ("gemini", 1, 23))
+        self.assertEqual({row["kind"] for row in self.saved["runs"]}, set(live_writer.KINDS))
+
+    def test_the_one_rejected_draft_promised_an_outcome_and_the_redraft_did_not(self) -> None:
+        redrafted = [row for row in self.saved["runs"] if row["ended_with"] == "model_redraft"]
+        self.assertEqual(len(redrafted), 1)
+        first, second = redrafted[0]["drafts"]
+        self.assertEqual((first["by"], second["by"]), (OUTCOME_REJECTED, OUTCOME_MODEL))
+        self.assertEqual([issue.split(":")[0] for issue in first["rejected_for"]], ["unsupported_certainty"])
+        self.assertIn("guaranteed", first["text"])
+        self.assertNotRegex(second["text"], "(?i)guarantee")
+        self.assertTrue(redrafted[0]["verified"] and redrafted[0]["same_end_as_code_written"])
+
+    def test_replayed_today_accepted_drafts_pass_and_the_rejected_draft_fails(self) -> None:
+        self.assertEqual(live_writer.reverify(self.saved), {
+            "accepted_checked": 23, "accepted_still_pass": 23, "rejected_checked": 1, "rejected_still_fail": 1,
+            "changed": []})
+
+    def test_a_draft_changed_after_the_fact_is_caught_by_the_replay(self) -> None:
+        tampered = json.loads(json.dumps(self.saved))
+        tampered["runs"][0]["drafts"][-1]["text"] += " A further $9,999,999 sits in reserve."
+        check = live_writer.reverify(tampered)
+        self.assertEqual((check["accepted_still_pass"], len(check["changed"])), (22, 1))
 
 
 class LiveWriterTests(unittest.TestCase):
