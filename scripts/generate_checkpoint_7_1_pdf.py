@@ -262,7 +262,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
   <div class="links-box">
     <div><strong>GitHub repository:</strong> <a href="https://github.com/pedrogriff/comp-insight-advisor">https://github.com/pedrogriff/comp-insight-advisor</a></div>
-    <div><strong>Video presentation:</strong> <span class="video-link"><a href="https://youtu.be/VIDEO-LINK-PENDING">https://youtu.be/VIDEO-LINK-PENDING</a></span></div>
+    <div><strong>Video presentation:</strong> <span class="video-link"><a href="https://youtu.be/YprdRwfI1LU">https://youtu.be/YprdRwfI1LU</a></span></div>
   </div>
 
   <h2 class="section-header">System Architecture Diagram</h2>
@@ -883,7 +883,7 @@ LINKS_HTML_TEMPLATE = """<!DOCTYPE html>
   <p>Pedro Griff Marcincowski. Strategic Talent and Compensation Insight Advisor.</p>
 
   <div class="links-box">
-    <div><strong>Video presentation, 8 to 10 minutes:</strong> <span class="video-link"><a href="https://youtu.be/VIDEO-LINK-PENDING">https://youtu.be/VIDEO-LINK-PENDING</a></span></div>
+    <div><strong>Video presentation, 8 to 10 minutes:</strong> <span class="video-link"><a href="https://youtu.be/YprdRwfI1LU">https://youtu.be/YprdRwfI1LU</a></span></div>
     <div><strong>GitHub repository:</strong> <a href="https://github.com/pedrogriff/comp-insight-advisor">https://github.com/pedrogriff/comp-insight-advisor</a></div>
     <div><strong>Final report:</strong> attached to this submission as <code>checkpoint_7_1.pdf</code>.</div>
   </div>

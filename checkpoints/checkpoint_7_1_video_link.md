@@ -2,7 +2,7 @@
 
 Pedro Griff Marcincowski. Strategic Talent and Compensation Insight Advisor.
 
-Video presentation, 8 to 10 minutes: https://youtu.be/VIDEO-LINK-PENDING
+Video presentation, 8 to 10 minutes: https://youtu.be/YprdRwfI1LU
 
 GitHub repository: https://github.com/pedrogriff/comp-insight-advisor
 

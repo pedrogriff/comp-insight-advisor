@@ -2,7 +2,7 @@
 
 GitHub repository: https://github.com/pedrogriff/comp-insight-advisor
 
-Video presentation: https://youtu.be/VIDEO-LINK-PENDING
+Video presentation: https://youtu.be/YprdRwfI1LU
 
 ## System architecture diagram
 

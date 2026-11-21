@@ -10,7 +10,7 @@ The current architecture diagram is in the final report, [checkpoint 7.1](checkp
 
 ## Review in five minutes
 
-The final report is [checkpoints/checkpoint_7_1.md](checkpoints/checkpoint_7_1.md), with a PDF and the presentation slides next to it.
+The final report is [checkpoints/checkpoint_7_1.md](checkpoints/checkpoint_7_1.md), with a PDF, the [presentation video](https://youtu.be/YprdRwfI1LU) and the presentation slides next to it.
 
 **Read on GitHub, with nothing installed.**
 
@@ -19,7 +19,7 @@ The final report is [checkpoints/checkpoint_7_1.md](checkpoints/checkpoint_7_1.m
 3. [Three requests and what came back](experiments/final_evaluation/sample_outputs.md): a costed brief with its approval record, a policy comparison and a refusal.
 4. [The recorded model run](experiments/final_evaluation/live_writer_run1.json): 23 requests with `gemini-3.5-flash-lite` writing the summary, with every draft and the reason for the one rejection.
 
-**Where each part of the presentation video lives in the code.**
+**Where each part of the [presentation video](https://youtu.be/YprdRwfI1LU) lives in the code.**
 
 | In the video | Code |
 | :--- | :--- |
