@@ -4,7 +4,7 @@ An AI research assistant for comp partners. It reads a synthetic company's pay, 
 
 All data is synthetic. Apex Cloud & AI Corp doesn't exist.
 
-This is my capstone for the 2026 *Agentic AI Program: Building Autonomous Systems for Real-World Applications*, an executive education program at Carnegie Mellon University's School of Computer Science. I post a build log every Tuesday on [LinkedIn](https://www.linkedin.com/in/pedrogriff/).
+This is my capstone for the 2026 *Agentic AI Program: Building Autonomous Systems for Real-World Applications*, an executive education program at Carnegie Mellon University's School of Computer Science. All seven build logs are on [LinkedIn](https://www.linkedin.com/in/pedrogriff/).
 
 The current architecture diagram is in the final report, [checkpoint 7.1](checkpoints/checkpoint_7_1.md#system-architecture-diagram). Earlier versions are in [checkpoint 6.1](checkpoints/checkpoint_6_1.md#system-architecture-diagram), [checkpoint 5.1](checkpoints/checkpoint_5_1.md#system-architecture-diagram), [checkpoint 4.1](checkpoints/checkpoint_4_1.md#system-architecture-diagram), [checkpoint 3.1](checkpoints/checkpoint_3_1.md#system-architecture-diagram), [checkpoint 2.1](checkpoints/checkpoint_2_1.md#system-architecture-diagram) and [checkpoint 1.1](checkpoints/checkpoint_1_1.md#system-architecture-diagram).
 
@@ -54,7 +54,7 @@ One request passes a screen, five nodes and a set of checks, and ends in one of 
 
 ## Status
 
-Updated every Tuesday.
+All seven checkpoints are complete.
 
 | Checkpoint | What works | Code |
 | :--- | :--- | :--- |
@@ -179,7 +179,7 @@ The generator is deterministic. A rerun writes the same three CSV files byte for
 | 4 | Nov 3 | [Build log 4/7](https://www.linkedin.com/feed/update/urn:li:activity:7523451374332858368/) | Two of my three plans were the same plan |
 | 5 | Nov 10 | [Build log 5/7](https://www.linkedin.com/feed/update/urn:li:activity:7525990176800616448/) | One agent vs. three, measured |
 | 6 | Nov 17 | [Build log 6/7](https://www.linkedin.com/feed/update/urn:li:activity:7528650394504249344/) | 155 of 160 planted faults caught |
-| 7 | Nov 24 | | Demo and scorecard |
+| 7 | Nov 24 | [Build log 7/7](https://www.linkedin.com/feed/update/urn:li:activity:7531228842783408128/) | Demo and scorecard |
 
 ## License
 
